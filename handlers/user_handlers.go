@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/daffashafwan/tadarus-yuk/db"
 	"github.com/daffashafwan/tadarus-yuk/internal/authorization"
@@ -174,9 +175,20 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var userID int
+	var authenticated bool
+	var role string
+	if strings.Contains(r.URL.Path, "admin") {
+		authenticated, userID, err = authenticateAdmin(loginRequest.Username, loginRequest.Password)
+		role = "admin"
+	} else {
+		authenticated, userID, err = authenticateUser(loginRequest.Username, loginRequest.Password)
+		role = "user"
+	}
+
 	// Authenticate user (you may want to check the password against the hashed password in the database)
 	// Example: Dummy authentication for illustration
-	authenticated, userID, err := authenticateUser(loginRequest.Username, loginRequest.Password)
+	
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error authenticating user"))
@@ -190,7 +202,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate authentication token (you may want to use a library like JWT)
-	authToken, err := authorization.GenerateAuthToken(userID)
+	authToken, err := authorization.GenerateAuthToken(userID, role)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error generating authentication token"))
@@ -235,6 +247,21 @@ func authenticateUser(username, password string) (bool, int, error) {
 	return true, user.ID, nil
 }
 
+func authenticateAdmin(username, password string) (bool, int, error) {
+
+	admin, err := getAdminByUsername(username)
+	if err != nil {
+		return false, 0, err
+	}
+
+	errVerify := helpers.VerifyPassword(password, admin.Password)
+	if errVerify != nil {
+		return false, 0, nil
+	}
+
+	return true, admin.ID, nil
+}
+
 // getUserByID retrieves user data from the database by username.
 func getUserByUsername(username string) (dto.User, error) {
 	// Query user data from the database by username
@@ -250,4 +277,20 @@ func getUserByUsername(username string) (dto.User, error) {
 	}
 
 	return user, nil
+}
+
+func getAdminByUsername(username string) (dto.Admin, error) {
+	// Query user data from the database by username
+	query := "SELECT * FROM admin WHERE username = $1"
+	row := db.GetDB().QueryRow(query, username)
+
+	var admin dto.Admin
+	err := row.Scan(&admin.ID, &admin.Username, &admin.Password)
+	if err == sql.ErrNoRows {
+		return dto.Admin{}, fmt.Errorf("username not found")
+	} else if err != nil {
+		return dto.Admin{}, err
+	}
+
+	return admin, nil
 }
