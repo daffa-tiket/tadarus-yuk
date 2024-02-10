@@ -23,9 +23,20 @@ func RegisterRoutes(router *mux.Router) {
 	// reading target
 	router.HandleFunc("/api/users/{id}/reading-targets", handlers.CreateReadingTargetByUserID).Methods(http.MethodPost)
 	router.HandleFunc("/api/users/{id}/reading-targets", handlers.GetAllReadingTargetByUserID).Methods(http.MethodGet)
+	
 	router.HandleFunc("/api/reading-targets", handlers.GetAllReadingTarget).Methods(http.MethodGet)
 	router.HandleFunc("/api/reading-targets/{id}", handlers.GetReadingTargetByID).Methods(http.MethodGet)
 	router.HandleFunc("/api/reading-targets/{id}", handlers.UpdateReadingTargetByID).Methods(http.MethodPut)
 	router.HandleFunc("/api/reading-targets/{id}", handlers.DeleteReadingTarget).Methods(http.MethodDelete)
+
+	// reading progress
+	router.HandleFunc("/api/users/{id}/reading-progress", handlers.GetAllReadingProgressByUserID).Methods(http.MethodGet)
+	router.HandleFunc("/api/users/{id}/reading-targets/{tid}/reading-progress", handlers.GetAllReadingProgressByUserIDTargetID).Methods(http.MethodGet)
+	router.HandleFunc("/api/users/{id}/reading-targets/{tid}/reading-progress", handlers.CreateReadingProgress).Methods(http.MethodPost)
+
+	router.HandleFunc("/api/reading-progress", handlers.GetAllReadingProgress).Methods(http.MethodGet)
+	router.HandleFunc("/api/reading-progress/{id}", handlers.GetReadingProgressByID).Methods(http.MethodGet)
+	router.HandleFunc("/api/reading-progress/{id}", handlers.UpdateReadingProgressByID).Methods(http.MethodPut)
+	router.HandleFunc("/api/reading-progress/{id}", handlers.DeleteReadingProgress).Methods(http.MethodDelete)
 	// Add more routes as needed
 }
