@@ -285,7 +285,7 @@ func getAdminByUsername(username string) (dto.Admin, error) {
 	row := db.GetDB().QueryRow(query, username)
 
 	var admin dto.Admin
-	err := row.Scan(&admin.ID, &admin.Username, &admin.Password)
+	err := row.Scan(&admin.ID, &admin.Username, &admin.Email, &admin.Password)
 	if err == sql.ErrNoRows {
 		return dto.Admin{}, fmt.Errorf("username not found")
 	} else if err != nil {
