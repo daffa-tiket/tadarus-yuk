@@ -1,0 +1,4 @@
+ALTER TABLE reading_target
+DROP COLUMN IF EXISTS name,
+DROP COLUMN IF EXISTS start_page,
+DROP COLUMN IF EXISTS end_page;

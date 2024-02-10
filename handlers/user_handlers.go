@@ -14,7 +14,7 @@ import (
 )
 
 // GetAllUsersHandler handles requests to get all users.
-func GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
+func GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	// Query all users from the database
 	query := "SELECT * FROM users"
 	rows, err := db.GetDB().Query(query)
@@ -43,7 +43,7 @@ func GetAllUsersHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // GetUserByIDHandler handles requests to get a user by ID.
-func GetUserByIDHandler(w http.ResponseWriter, r *http.Request) {
+func GetUserByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := vars["id"]
 
@@ -60,7 +60,7 @@ func GetUserByIDHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // RegisterHandler handles requests for user registration.
-func RegisterHandler(w http.ResponseWriter, r *http.Request) {
+func Register(w http.ResponseWriter, r *http.Request) {
 	var user dto.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
@@ -106,7 +106,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // UpdateUserHandler handles requests to update a user by ID.
-func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := vars["id"]
 
@@ -148,7 +148,7 @@ func UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // DeleteUserHandler handles requests to delete a user by ID.
-func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
+func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := vars["id"]
 
@@ -165,7 +165,7 @@ func DeleteUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // LoginHandler handles requests for user login.
-func LoginHandler(w http.ResponseWriter, r *http.Request) {
+func Login(w http.ResponseWriter, r *http.Request) {
 	var loginRequest dto.LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&loginRequest)
 	if err != nil {
