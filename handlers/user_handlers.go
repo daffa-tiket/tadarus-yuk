@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -20,6 +21,7 @@ func GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	query := "SELECT * FROM users"
 	rows, err := db.GetDB().Query(query)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error fetching users"))
 		return
@@ -31,6 +33,7 @@ func GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		var user dto.User
 		err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Password)
 		if err != nil {
+			log.Printf("Error : %v", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error scanning user rows"))
 			return
@@ -50,6 +53,7 @@ func GetUserByID(w http.ResponseWriter, r *http.Request) {
 
 	userResult, err := getUserByID(userID)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error fetching user"))
 		return
@@ -65,6 +69,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var user dto.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Invalid request body"))
 		return
@@ -80,6 +85,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	// Hash the password
 	hashedPassword, err := helpers.HashPassword(user.Password)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error hashing password"))
 		return
@@ -95,6 +101,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	query := "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id"
 	err = db.GetDB().QueryRow(query, user.Username, user.Email, hashedPassword).Scan(&user.ID)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error creating user"))
 		return
@@ -114,6 +121,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	// Fetch user data from the database by ID
 	user, err := getUserByID(userID)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error fetching user data"))
 		return
@@ -123,6 +131,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var updatedUser dto.User
 	err = json.NewDecoder(r.Body).Decode(&updatedUser)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Invalid request body"))
 		return
@@ -138,6 +147,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	query := "UPDATE users SET username = $1, email = $2 WHERE id = $3"
 	_, err = db.GetDB().Exec(query, user.Username, user.Email, user.ID)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error updating user data"))
 		return
@@ -157,6 +167,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	query := "DELETE FROM users WHERE id = $1"
 	_, err := db.GetDB().Exec(query, userID)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error deleting user"))
 		return
@@ -170,6 +181,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	var loginRequest dto.LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&loginRequest)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Invalid request body"))
 		return
@@ -188,8 +200,9 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	// Authenticate user (you may want to check the password against the hashed password in the database)
 	// Example: Dummy authentication for illustration
-	
+
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error authenticating user"))
 		return
@@ -204,6 +217,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	// Generate authentication token (you may want to use a library like JWT)
 	authToken, err := authorization.GenerateAuthToken(userID, role)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error generating authentication token"))
 		return
@@ -226,6 +240,7 @@ func getUserByID(userID string) (dto.User, error) {
 	if err == sql.ErrNoRows {
 		return dto.User{}, fmt.Errorf("User with ID %s not found", userID)
 	} else if err != nil {
+		log.Printf("Error : %v", err.Error())
 		return dto.User{}, err
 	}
 
@@ -236,6 +251,7 @@ func authenticateUser(username, password string) (bool, int, error) {
 
 	user, err := getUserByUsername(username)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		return false, 0, err
 	}
 
@@ -251,6 +267,7 @@ func authenticateAdmin(username, password string) (bool, int, error) {
 
 	admin, err := getAdminByUsername(username)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		return false, 0, err
 	}
 
@@ -273,6 +290,7 @@ func getUserByUsername(username string) (dto.User, error) {
 	if err == sql.ErrNoRows {
 		return dto.User{}, fmt.Errorf("username not found")
 	} else if err != nil {
+		log.Printf("Error : %v", err.Error())
 		return dto.User{}, err
 	}
 
@@ -289,6 +307,7 @@ func getAdminByUsername(username string) (dto.Admin, error) {
 	if err == sql.ErrNoRows {
 		return dto.Admin{}, fmt.Errorf("username not found")
 	} else if err != nil {
+		log.Printf("Error : %v", err.Error())
 		return dto.Admin{}, err
 	}
 

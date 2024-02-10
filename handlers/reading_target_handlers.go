@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -22,6 +23,7 @@ func GetAllReadingTarget(w http.ResponseWriter, r *http.Request) {
 	query := "SELECT * FROM reading_target"
 	rows, err := db.GetDB().Query(query)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error fetching reading_targets"))
 		return
@@ -33,6 +35,7 @@ func GetAllReadingTarget(w http.ResponseWriter, r *http.Request) {
 		var readingTarget dto.ReadingTarget
 		err := rows.Scan(&readingTarget.ID, &readingTarget.UserID, &readingTarget.StartDate, &readingTarget.EndDate, &readingTarget.Pages, &readingTarget.Name, &readingTarget.StartPage, &readingTarget.EndPage)
 		if err != nil {
+			log.Printf("Error : %v", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error scanning reading_targets rows"))
 			return
@@ -52,6 +55,7 @@ func GetReadingTargetByID(w http.ResponseWriter, r *http.Request) {
 
 	readingTargetRes, err := getReadingTargetByID(readingTargetID)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error fetching reading_target"))
 		return
@@ -68,6 +72,7 @@ func UpdateReadingTargetByID(w http.ResponseWriter, r *http.Request) {
 
 	readingTarget, err := getReadingTargetByID(readingTargetID)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error fetching reading target"))
 		return
@@ -76,6 +81,7 @@ func UpdateReadingTargetByID(w http.ResponseWriter, r *http.Request) {
 	var readingTargetUpdate dto.ReadingTarget
 	err = json.NewDecoder(r.Body).Decode(&readingTargetUpdate)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Invalid request body"))
 		return
@@ -89,6 +95,7 @@ func UpdateReadingTargetByID(w http.ResponseWriter, r *http.Request) {
 	query := "UPDATE reading_target SET name = $1, start_date = $2, end_date = $3, start_page = $4, end_page = $5, target_pages_per_interval = $6 WHERE target_id = $7"
 	_, err = db.GetDB().Exec(query, readingTarget.Name, readingTarget.StartDate, readingTarget.EndDate, readingTarget.StartPage, readingTarget.EndPage, readingTarget.Pages, readingTarget.ID)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error updating readingTarget data"))
 		return
@@ -107,6 +114,7 @@ func DeleteReadingTarget(w http.ResponseWriter, r *http.Request) {
 	query := "DELETE FROM reading_target WHERE target_id = $1"
 	_, err := db.GetDB().Exec(query, readingTargetID)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error deleting reading target"))
 		return
@@ -119,6 +127,7 @@ func CreateReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 	var readingTarget dto.ReadingTarget
 	err := json.NewDecoder(r.Body).Decode(&readingTarget)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Invalid request body"))
 		return
@@ -129,6 +138,7 @@ func CreateReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 
 	_, err = getUserByID(userID)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Error user not found"))
 		return
@@ -149,8 +159,9 @@ func CreateReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 	readingTarget.UserID, _ = strconv.Atoi(userID)
 
 	query := "INSERT INTO reading_target (user_id, name, start_date, end_date, start_page, end_page, target_pages_per_interval) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING target_id"
-	err = db.GetDB().QueryRow(query, readingTarget.UserID, readingTarget.Name, readingTarget.StartDate,  readingTarget.EndDate, readingTarget.StartPage,  readingTarget.EndPage, readingTarget.Pages).Scan(&readingTarget.ID)
+	err = db.GetDB().QueryRow(query, readingTarget.UserID, readingTarget.Name, readingTarget.StartDate, readingTarget.EndDate, readingTarget.StartPage, readingTarget.EndPage, readingTarget.Pages).Scan(&readingTarget.ID)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error creating reading target"))
 		return
@@ -171,6 +182,7 @@ func GetAllReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 	query := "SELECT * FROM reading_target where user_id = $1"
 	rows, err := db.GetDB().Query(query, userID)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("Error fetching reading_targets"))
 		return
@@ -182,6 +194,7 @@ func GetAllReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 		var readingTarget dto.ReadingTarget
 		err := rows.Scan(&readingTarget.ID, &readingTarget.UserID, &readingTarget.StartDate, &readingTarget.EndDate, &readingTarget.Pages, &readingTarget.Name, &readingTarget.StartPage, &readingTarget.EndPage)
 		if err != nil {
+			log.Printf("Error : %v", err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte("Error scanning reading_targets rows"))
 			return
@@ -194,8 +207,6 @@ func GetAllReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(readingTargets)
 }
 
-
-
 // getReadingTargetByID retrieves reading_target data from the database by ID.
 func getReadingTargetByID(readingTargetID string) (dto.ReadingTarget, error) {
 	// Query readingTarget data from the database by ID
@@ -207,6 +218,7 @@ func getReadingTargetByID(readingTargetID string) (dto.ReadingTarget, error) {
 	if err == sql.ErrNoRows {
 		return dto.ReadingTarget{}, fmt.Errorf("Reading Target with ID %s not found", readingTargetID)
 	} else if err != nil {
+		log.Printf("Error : %v", err.Error())
 		return dto.ReadingTarget{}, err
 	}
 
@@ -216,11 +228,13 @@ func getReadingTargetByID(readingTargetID string) (dto.ReadingTarget, error) {
 func isValidDateRange(startDateStr, endDateStr string) bool {
 	startDate, err := time.Parse("2006-01-02", startDateStr)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		return false
 	}
 
 	endDate, err := time.Parse("2006-01-02", endDateStr)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		return false
 	}
 

@@ -21,11 +21,13 @@ func ConnectDB() {
 	var err error
 	db, err = sql.Open("postgres", connectionString)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		log.Fatal("Error connecting to the database:", err)
 	}
 
 	err = db.Ping()
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		log.Fatal("Error pinging the database:", err)
 	}
 

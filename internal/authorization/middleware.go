@@ -2,6 +2,7 @@ package authorization
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -31,6 +32,7 @@ func AuthenticationMiddleware(role string) mux.MiddlewareFunc {
 			// Parse and validate the token
 			claims, err := parseAndValidateToken(tokenString)
 			if err != nil {
+				log.Printf("Error : %v", err.Error())
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
@@ -58,6 +60,7 @@ func parseAndValidateToken(tokenString string) (*CustomClaims, error) {
 	})
 
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		return nil, err
 	}
 
@@ -85,6 +88,7 @@ func GenerateAuthToken(userID int, role string) (string, error) {
 	// Sign the token with a secret key
 	signedToken, err := token.SignedString(secretKey)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		return "", err
 	}
 

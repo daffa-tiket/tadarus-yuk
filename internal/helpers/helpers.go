@@ -2,6 +2,8 @@ package helpers
 
 import (
 	"errors"
+	"log"
+
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -19,6 +21,7 @@ func ValidatePassword(password string) error {
 func HashPassword(password string) (string, error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
+		log.Printf("Error : %v", err.Error())
 		return "", err
 	}
 	return string(hashedPassword), nil
