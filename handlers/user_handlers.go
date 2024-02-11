@@ -181,7 +181,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	var loginRequest dto.LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&loginRequest)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
+		log.Printf("[Login] Decode Error : %v %v", err.Error(), loginRequest)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Invalid request body"))
 		return
