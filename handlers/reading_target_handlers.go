@@ -11,6 +11,7 @@ import (
 
 	"github.com/daffashafwan/tadarus-yuk/db"
 	"github.com/daffashafwan/tadarus-yuk/internal/dto"
+	"github.com/daffashafwan/tadarus-yuk/internal/helpers"
 	"github.com/gorilla/mux"
 )
 
@@ -23,9 +24,7 @@ func GetAllReadingTarget(w http.ResponseWriter, r *http.Request) {
 	query := "SELECT * FROM reading_target"
 	rows, err := db.GetDB().Query(query)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error fetching reading_targets"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching get all reading target", nil)
 		return
 	}
 	defer rows.Close()
@@ -35,17 +34,13 @@ func GetAllReadingTarget(w http.ResponseWriter, r *http.Request) {
 		var readingTarget dto.ReadingTarget
 		err := rows.Scan(&readingTarget.ID, &readingTarget.UserID, &readingTarget.StartDate, &readingTarget.EndDate, &readingTarget.Pages, &readingTarget.Name, &readingTarget.StartPage, &readingTarget.EndPage)
 		if err != nil {
-			log.Printf("Error : %v", err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error scanning reading_targets rows"))
+			helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching reading target rows", nil)
 			return
 		}
 		readingTargets = append(readingTargets, readingTarget)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(readingTargets)
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingTargets)
 }
 
 // GetReadingTargetByIDHandler handles requests to get a reading_target by ID.
@@ -55,15 +50,11 @@ func GetReadingTargetByID(w http.ResponseWriter, r *http.Request) {
 
 	readingTargetRes, err := getReadingTargetByID(readingTargetID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error fetching reading_target"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching get reading target by ID", nil)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(readingTargetRes)
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingTargetRes)
 }
 
 func UpdateReadingTargetByID(w http.ResponseWriter, r *http.Request) {
@@ -72,18 +63,14 @@ func UpdateReadingTargetByID(w http.ResponseWriter, r *http.Request) {
 
 	readingTarget, err := getReadingTargetByID(readingTargetID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error fetching reading target"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching get reading target by ID", nil)
 		return
 	}
 
 	var readingTargetUpdate dto.ReadingTarget
 	err = json.NewDecoder(r.Body).Decode(&readingTargetUpdate)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid request body"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Invalid request body", nil)
 		return
 	}
 
@@ -95,15 +82,11 @@ func UpdateReadingTargetByID(w http.ResponseWriter, r *http.Request) {
 	query := "UPDATE reading_target SET name = $1, start_date = $2, end_date = $3, start_page = $4, end_page = $5, target_pages_per_interval = $6 WHERE target_id = $7"
 	_, err = db.GetDB().Exec(query, readingTarget.Name, readingTarget.StartDate, readingTarget.EndDate, readingTarget.StartPage, readingTarget.EndPage, readingTarget.Pages, readingTarget.ID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error updating readingTarget data"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error updating reading target", nil)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(readingTarget)
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingTarget)
 }
 
 func DeleteReadingTarget(w http.ResponseWriter, r *http.Request) {
@@ -114,22 +97,18 @@ func DeleteReadingTarget(w http.ResponseWriter, r *http.Request) {
 	query := "DELETE FROM reading_target WHERE target_id = $1"
 	_, err := db.GetDB().Exec(query, readingTargetID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error deleting reading target"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error deleting reading target", nil)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	helpers.ResponseJSON(w, err, http.StatusNoContent, "SUCCESS", nil)
 }
 
 func CreateReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 	var readingTarget dto.ReadingTarget
 	err := json.NewDecoder(r.Body).Decode(&readingTarget)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid request body"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Invalid request body", nil)
 		return
 	}
 
@@ -138,21 +117,17 @@ func CreateReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 
 	_, err = getUserByID(userID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Error user not found"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Error user not found", nil)
 		return
 	}
 
 	if !isValidDateRange(readingTarget.StartDate, readingTarget.EndDate) {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("invalid date or date range"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "invalid date or date range", nil)
 		return
 	}
 
 	if readingTarget.Pages < 1 || readingTarget.Pages > PagesAlQuran {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("invalid number of pages"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "invalid number of pages", nil)
 		return
 	}
 
@@ -161,16 +136,11 @@ func CreateReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 	query := "INSERT INTO reading_target (user_id, name, start_date, end_date, start_page, end_page, target_pages_per_interval) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING target_id"
 	err = db.GetDB().QueryRow(query, readingTarget.UserID, readingTarget.Name, readingTarget.StartDate, readingTarget.EndDate, readingTarget.StartPage, readingTarget.EndPage, readingTarget.Pages).Scan(&readingTarget.ID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error creating reading target"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error creating reading target", nil)
 		return
 	}
 
-	// Return a success response
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(readingTarget)
+	helpers.ResponseJSON(w, err, http.StatusCreated, "SUCCESS", readingTarget)
 
 }
 
@@ -182,9 +152,7 @@ func GetAllReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 	query := "SELECT * FROM reading_target where user_id = $1"
 	rows, err := db.GetDB().Query(query, userID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error fetching reading_targets"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching get reading target by userID", nil)
 		return
 	}
 	defer rows.Close()
@@ -194,17 +162,13 @@ func GetAllReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 		var readingTarget dto.ReadingTarget
 		err := rows.Scan(&readingTarget.ID, &readingTarget.UserID, &readingTarget.StartDate, &readingTarget.EndDate, &readingTarget.Pages, &readingTarget.Name, &readingTarget.StartPage, &readingTarget.EndPage)
 		if err != nil {
-			log.Printf("Error : %v", err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error scanning reading_targets rows"))
+			helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error scanning reading target rows", nil)
 			return
 		}
 		readingTargets = append(readingTargets, readingTarget)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(readingTargets)
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingTargets)
 }
 
 // getReadingTargetByID retrieves reading_target data from the database by ID.

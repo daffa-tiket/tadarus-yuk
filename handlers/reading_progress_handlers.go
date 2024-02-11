@@ -10,6 +10,7 @@ import (
 
 	"github.com/daffashafwan/tadarus-yuk/db"
 	"github.com/daffashafwan/tadarus-yuk/internal/dto"
+	"github.com/daffashafwan/tadarus-yuk/internal/helpers"
 	"github.com/gorilla/mux"
 )
 
@@ -18,9 +19,7 @@ func GetAllReadingProgress(w http.ResponseWriter, r *http.Request) {
 	query := "SELECT * FROM reading_progress"
 	rows, err := db.GetDB().Query(query)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error fetching reading_progress"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching reading progress", nil)
 		return
 	}
 	defer rows.Close()
@@ -30,17 +29,14 @@ func GetAllReadingProgress(w http.ResponseWriter, r *http.Request) {
 		var readingProgress dto.ReadingProgress
 		err := rows.Scan(&readingProgress.ID, &readingProgress.UserID, &readingProgress.TargetID, &readingProgress.CurrentPage, &readingProgress.TimeStamp)
 		if err != nil {
-			log.Printf("Error : %v", err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error scanning reading_progress rows"))
+			helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching get all reading progress", nil)
 			return
 		}
 		readingProgresss = append(readingProgresss, readingProgress)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(readingProgresss)
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingProgresss)
+	
 }
 
 // GetReadingProgressByIDHandler handles requests to get a reading_progress by ID.
@@ -50,15 +46,11 @@ func GetReadingProgressByID(w http.ResponseWriter, r *http.Request) {
 
 	readingProgressRes, err := getReadingProgressByID(readingProgressID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error fetching reading_progress"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching reading progress by ID", nil)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(readingProgressRes)
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingProgressRes)
 }
 
 func UpdateReadingProgressByID(w http.ResponseWriter, r *http.Request) {
@@ -67,18 +59,14 @@ func UpdateReadingProgressByID(w http.ResponseWriter, r *http.Request) {
 
 	readingProgress, err := getReadingProgressByID(readingProgressID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error fetching reading progress"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching reading progress by ID", nil)
 		return
 	}
 
 	var readingProgressUpdate dto.ReadingProgress
 	err = json.NewDecoder(r.Body).Decode(&readingProgressUpdate)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid request body"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Invalid request body", nil)
 		return
 	}
 
@@ -87,15 +75,11 @@ func UpdateReadingProgressByID(w http.ResponseWriter, r *http.Request) {
 	query := "UPDATE reading_progress SET current_page = $1 WHERE progress_id = $2"
 	_, err = db.GetDB().Exec(query, readingProgress.CurrentPage, readingProgress.ID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error updating readingProgress data"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error updating reading progress", nil)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(readingProgress)
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingProgress)
 }
 
 func DeleteReadingProgress(w http.ResponseWriter, r *http.Request) {
@@ -106,22 +90,18 @@ func DeleteReadingProgress(w http.ResponseWriter, r *http.Request) {
 	query := "DELETE FROM reading_progress WHERE progress_id = $1"
 	_, err := db.GetDB().Exec(query, readingProgressID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error deleting reading progress"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error deleting reading progress", nil)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	helpers.ResponseJSON(w, err, http.StatusNoContent, "SUCCESS", nil)
 }
 
 func CreateReadingProgress(w http.ResponseWriter, r *http.Request) {
 	var readingProgress dto.ReadingProgress
 	err := json.NewDecoder(r.Body).Decode(&readingProgress)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid request body"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Invalid request body", nil)
 		return
 	}
 
@@ -131,30 +111,24 @@ func CreateReadingProgress(w http.ResponseWriter, r *http.Request) {
 
 	user, err := getUserByID(userID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Error get user"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Error get user", nil)
 		return
 	}
 
 	readingTarget, err := getReadingTargetByID(targetID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Error get reading target"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Error get reading target", nil)
 		return
 	}
 
 	if readingProgress.CurrentPage < readingTarget.StartPage || readingProgress.CurrentPage > readingTarget.EndPage {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("page is more or less than target"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "page is more or less than target", nil)
 		return
 	}
 
 	readedPage := getReadedPages(userID, targetID)
 	if containsValue(readedPage, readingProgress.CurrentPage) {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Page already read"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Page "+ strconv.Itoa(readingProgress.CurrentPage) +"  already read", nil)
 		return
 	}
 
@@ -164,16 +138,12 @@ func CreateReadingProgress(w http.ResponseWriter, r *http.Request) {
 	query := "INSERT INTO reading_progress (user_id, target_id, current_page) VALUES ($1, $2, $3) RETURNING progress_id"
 	err = db.GetDB().QueryRow(query, readingProgress.UserID, readingProgress.TargetID, readingProgress.CurrentPage).Scan(&readingProgress.ID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error creating reading progress"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error creating reading progress", nil)
 		return
 	}
 
-	// Return a success response
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(readingProgress)
+	helpers.ResponseJSON(w, err, http.StatusCreated, "SUCCESS", readingProgress)
+	
 }
 
 func GetAllReadingProgressByUserID(w http.ResponseWriter, r *http.Request) {
@@ -184,9 +154,7 @@ func GetAllReadingProgressByUserID(w http.ResponseWriter, r *http.Request) {
 	query := "SELECT * FROM reading_progress where user_id = $1"
 	rows, err := db.GetDB().Query(query, userID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error fetching reading progress"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching get all reading progress", nil)
 		return
 	}
 	defer rows.Close()
@@ -196,17 +164,13 @@ func GetAllReadingProgressByUserID(w http.ResponseWriter, r *http.Request) {
 		var readingProgress dto.ReadingProgress
 		err := rows.Scan(&readingProgress.ID, &readingProgress.UserID, &readingProgress.TargetID, &readingProgress.CurrentPage, &readingProgress.TimeStamp)
 		if err != nil {
-			log.Printf("Error : %v", err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error scanning reading progress rows"))
+			helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error scanning all reading progress by userID", nil)
 			return
 		}
 		readingProgresses = append(readingProgresses, readingProgress)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(readingProgresses)
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingProgresses)
 }
 
 func GetAllReadingProgressByUserIDTargetID(w http.ResponseWriter, r *http.Request) {
@@ -216,32 +180,24 @@ func GetAllReadingProgressByUserIDTargetID(w http.ResponseWriter, r *http.Reques
 
 	user, err := getUserByID(userID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Error get user"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Error get user", nil)
 		return
 	}
 
 	readingTarget, err := getReadingTargetByID(targetID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Error get reading target"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Error get reading target", nil)
 		return
 	}
 
 	readingProgress, err := getReadingProgressByUserIDTargetID(user.ID, readingTarget.ID)
 
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error get reading progress"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error get reading progress", nil)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(readingProgress)
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingProgress)
 }
 
 // getReadingProgressByID retrieves reading_progress data from the database by ID.

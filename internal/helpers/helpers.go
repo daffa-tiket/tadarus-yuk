@@ -1,9 +1,12 @@
 package helpers
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
+	"net/http"
 
+	"github.com/daffashafwan/tadarus-yuk/internal/dto"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -29,4 +32,21 @@ func HashPassword(password string) (string, error) {
 
 func VerifyPassword(providedPassword, hashedPassword string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(providedPassword))
+}
+
+func ResponseJSON(w http.ResponseWriter, err error, statusCode int, message string, data interface{}) {
+	if err != nil {
+		log.Printf("Error : %v", err.Error())
+		message = err.Error() + message
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
+	dataRes := dto.Response{
+		Code:    statusCode,
+		Message: message,
+		Data:    data,
+	}
+	resp, _ := json.Marshal(dataRes)
+	w.Write(resp)
+	return
 }

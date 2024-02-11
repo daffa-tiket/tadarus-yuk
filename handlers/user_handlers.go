@@ -21,9 +21,7 @@ func GetAllUsers(w http.ResponseWriter, r *http.Request) {
 	query := "SELECT * FROM users"
 	rows, err := db.GetDB().Query(query)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error fetching users"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching get all users", nil)
 		return
 	}
 	defer rows.Close()
@@ -33,17 +31,13 @@ func GetAllUsers(w http.ResponseWriter, r *http.Request) {
 		var user dto.User
 		err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Password)
 		if err != nil {
-			log.Printf("Error : %v", err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Error scanning user rows"))
+			helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error scanning user row", nil)
 			return
 		}
 		users = append(users, user)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(users)
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", users)
 }
 
 // GetUserByIDHandler handles requests to get a user by ID.
@@ -53,15 +47,11 @@ func GetUserByID(w http.ResponseWriter, r *http.Request) {
 
 	userResult, err := getUserByID(userID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error fetching user"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching get user by ID", nil)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(userResult)
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", userResult)
 }
 
 // RegisterHandler handles requests for user registration.
@@ -69,48 +59,37 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var user dto.User
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid request body"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Invalid request body", nil)
 		return
 	}
 
 	// Validate the password
 	if err := helpers.ValidatePassword(user.Password); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
 	// Hash the password
 	hashedPassword, err := helpers.HashPassword(user.Password)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error hashing password"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error hashing password", nil)
 		return
 	}
 
 	// Insert the user into the database
 	userResult, _ := getUserByUsername(user.Username)
 	if userResult.Username == user.Username {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("username has taken"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "username has taken", nil)
 		return
 	}
 	query := "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id"
 	err = db.GetDB().QueryRow(query, user.Username, user.Email, hashedPassword).Scan(&user.ID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error creating user"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error creating user", nil)
 		return
 	}
 
-	// Return a success response
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(user)
+	helpers.ResponseJSON(w, err, http.StatusCreated, "SUCCESS", user)
 }
 
 // UpdateUserHandler handles requests to update a user by ID.
@@ -121,9 +100,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	// Fetch user data from the database by ID
 	user, err := getUserByID(userID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error fetching user data"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching user data", nil)
 		return
 	}
 
@@ -131,9 +108,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	var updatedUser dto.User
 	err = json.NewDecoder(r.Body).Decode(&updatedUser)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid request body"))
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Invalid request body", nil)
 		return
 	}
 
@@ -147,15 +122,11 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	query := "UPDATE users SET username = $1, email = $2 WHERE id = $3"
 	_, err = db.GetDB().Exec(query, user.Username, user.Email, user.ID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error updating user data"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error updating user data", nil)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(user)
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", user)
 }
 
 // DeleteUserHandler handles requests to delete a user by ID.
@@ -167,13 +138,11 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	query := "DELETE FROM users WHERE id = $1"
 	_, err := db.GetDB().Exec(query, userID)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error deleting user"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error deleting user", nil)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	helpers.ResponseJSON(w, err, http.StatusNoContent, "Succes Delete User", nil)
 }
 
 // LoginHandler handles requests for user login.
@@ -181,13 +150,10 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	var loginRequest dto.LoginRequest
 	err := json.NewDecoder(r.Body).Decode(&loginRequest)
 	if err != nil {
-		log.Printf("[Login] Decode Error : %v %v", err.Error(), loginRequest)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid request body"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "invalid request body", nil)
 		return
 	}
 
-	log.Printf("go here 0")
 	var userID int
 	var authenticated bool
 	var role string
@@ -199,42 +165,28 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		role = "user"
 	}
 
-	log.Printf("go here 1")
-
 	// Authenticate user (you may want to check the password against the hashed password in the database)
 	// Example: Dummy authentication for illustration
 
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error authenticating user"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "error authenticating user", nil)
 		return
 	}
-
-	log.Printf("go here 2")
 
 	if !authenticated {
-		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte("Invalid username or password"))
+		helpers.ResponseJSON(w, err, http.StatusUnauthorized, "Invalid username or password", nil)
 		return
 	}
-
-	log.Printf("go here 3")
 
 	// Generate authentication token (you may want to use a library like JWT)
 	authToken, err := authorization.GenerateAuthToken(userID, role)
 	if err != nil {
-		log.Printf("Error : %v", err.Error())
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Error generating authentication token"))
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error generating authentication token", nil)
 		return
 	}
 
-	log.Printf("success login %s", authToken)
 	// Return the authentication token
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"token": authToken})
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", map[string]string{"token": authToken})
 }
 
 // getUserByID retrieves user data from the database by ID.
