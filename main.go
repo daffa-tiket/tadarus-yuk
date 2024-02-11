@@ -27,7 +27,6 @@ func main() {
 
 	port := ":9999"
 	log.Printf("Server listening on port %s...\n", port)
-	log.Fatal(http.ListenAndServe(port, router))
 
 	log.Fatal(http.ListenAndServe(port, handlers.CORS(headersOk, originsOk, methodsOk)(router)))
 }
