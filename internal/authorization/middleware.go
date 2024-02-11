@@ -47,6 +47,11 @@ func AuthenticationMiddleware(role string) mux.MiddlewareFunc {
 				return
 			}
 
+			// Set CORS headers
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
 			// If authentication and role checks are successful, proceed to the next handler
 			next.ServeHTTP(w, r)
 		})
