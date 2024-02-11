@@ -186,7 +186,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return the authentication token
-	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", map[string]string{"token": authToken})
+	resp := map[string]interface{} {
+		"userID": userID,
+		"token": authToken,
+	}
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", resp)
 }
 
 // getUserByID retrieves user data from the database by ID.
