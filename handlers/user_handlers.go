@@ -187,6 +187,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("go here 0")
 	var userID int
 	var authenticated bool
 	var role string
@@ -198,6 +199,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		role = "user"
 	}
 
+	log.Printf("go here 1")
+
 	// Authenticate user (you may want to check the password against the hashed password in the database)
 	// Example: Dummy authentication for illustration
 
@@ -208,11 +211,15 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("go here 2")
+
 	if !authenticated {
 		w.WriteHeader(http.StatusUnauthorized)
 		w.Write([]byte("Invalid username or password"))
 		return
 	}
+
+	log.Printf("go here 3")
 
 	// Generate authentication token (you may want to use a library like JWT)
 	authToken, err := authorization.GenerateAuthToken(userID, role)
