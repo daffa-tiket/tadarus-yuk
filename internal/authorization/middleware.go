@@ -21,6 +21,7 @@ type CustomClaims struct {
 func AuthenticationMiddleware(role string) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("Incoming request: %s %s %v", r.Method, r.URL.Path, r.Header)
 			// Perform authentication logic here based on the role
 			// For example, check if a valid token is present in the request headers
 			tokenString := r.Header.Get("Authorization")
