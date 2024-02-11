@@ -223,6 +223,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Printf("success login %s", authToken)
 	// Return the authentication token
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
