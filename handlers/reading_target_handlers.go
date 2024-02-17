@@ -151,10 +151,9 @@ func GetAllReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 
 	//query := "SELECT * FROM reading_target where user_id = $1"
 	query := `
-        SELECT rt.*, rp.*
-        FROM reading_target AS rt
-        LEFT JOIN reading_progress AS rp ON rt.target_id = rp.target_id
-        WHERE rt.user_id = $1;
+        SELECT *
+        FROM reading_target
+        WHERE user_id = $1;
     `
 	rows, err := db.GetDB().Query(query, userID)
 	if err != nil {
@@ -166,11 +165,18 @@ func GetAllReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 	var readingTargets []dto.ReadingTarget
 	for rows.Next() {
 		var readingTarget dto.ReadingTarget
-		err := rows.Scan(&readingTarget.ID, &readingTarget.UserID, &readingTarget.StartDate, &readingTarget.EndDate, &readingTarget.Pages, &readingTarget.Name, &readingTarget.StartPage, &readingTarget.EndPage, &readingTarget.Progress.ID, &readingTarget.Progress.UserID, &readingTarget.Progress.TargetID, &readingTarget.Progress.CurrentPage, &readingTarget.Progress.TimeStamp)
+		err := rows.Scan(&readingTarget.ID, &readingTarget.UserID, &readingTarget.StartDate, &readingTarget.EndDate, &readingTarget.Pages, &readingTarget.Name, &readingTarget.StartPage, &readingTarget.EndPage)
 		if err != nil {
 			helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error scanning reading target rows", nil)
 			return
 		}
+		progresses, err := getReadingProgressByUserIDTargetID(readingTarget.UserID, readingTarget.ID)
+		if err != nil {
+			helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error getting reading progress in target", nil)
+			return
+		}
+		readingTarget.Progress = float64(len(progresses)) / readingTarget.Pages * 100
+		readingTarget.Progress = float64(int(readingTarget.Progress*10)) / 10
 		readingTargets = append(readingTargets, readingTarget)
 	}
 
