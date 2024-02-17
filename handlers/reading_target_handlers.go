@@ -149,7 +149,13 @@ func GetAllReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := vars["id"]
 
-	query := "SELECT * FROM reading_target where user_id = $1"
+	//query := "SELECT * FROM reading_target where user_id = $1"
+	query := `
+        SELECT rt.*, rp.*
+        FROM reading_target AS rt
+        LEFT JOIN reading_progress AS rp ON rt.target_id = rp.target_id
+        WHERE rt.user_id = $1;
+    `
 	rows, err := db.GetDB().Query(query, userID)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching get reading target by userID", nil)
@@ -160,7 +166,7 @@ func GetAllReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 	var readingTargets []dto.ReadingTarget
 	for rows.Next() {
 		var readingTarget dto.ReadingTarget
-		err := rows.Scan(&readingTarget.ID, &readingTarget.UserID, &readingTarget.StartDate, &readingTarget.EndDate, &readingTarget.Pages, &readingTarget.Name, &readingTarget.StartPage, &readingTarget.EndPage)
+		err := rows.Scan(&readingTarget.ID, &readingTarget.UserID, &readingTarget.StartDate, &readingTarget.EndDate, &readingTarget.Pages, &readingTarget.Name, &readingTarget.StartPage, &readingTarget.EndPage, &readingTarget.Progress.ID, &readingTarget.Progress.UserID, &readingTarget.Progress.TargetID, &readingTarget.Progress.CurrentPage, &readingTarget.Progress.TimeStamp)
 		if err != nil {
 			helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error scanning reading target rows", nil)
 			return

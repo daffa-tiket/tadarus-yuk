@@ -9,4 +9,5 @@ type ReadingTarget struct {
 	StartPage int    `json:"startPage"`
 	EndPage   int    `json:"endPage"`
 	Pages     int    `json:"pages"`
+	Progress  ReadingProgress `json:"progress"`
 }
