@@ -48,5 +48,4 @@ func ResponseJSON(w http.ResponseWriter, err error, statusCode int, message stri
 	}
 	resp, _ := json.Marshal(dataRes)
 	w.Write(resp)
-	return
 }

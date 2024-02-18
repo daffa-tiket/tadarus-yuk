@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/daffashafwan/tadarus-yuk/db"
+	"github.com/daffashafwan/tadarus-yuk/internal/authorization"
 	"github.com/daffashafwan/tadarus-yuk/internal/dto"
 	"github.com/daffashafwan/tadarus-yuk/internal/helpers"
 	"github.com/gorilla/mux"
@@ -115,7 +115,7 @@ func CreateReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := vars["id"]
 
-	_, err = getUserByID(userID)
+	user, err := getUserByID(userID)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Error user not found", nil)
 		return
@@ -131,10 +131,8 @@ func CreateReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	readingTarget.UserID, _ = strconv.Atoi(userID)
-
 	query := "INSERT INTO reading_target (user_id, name, start_date, end_date, start_page, end_page, target_pages_per_interval) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING target_id"
-	err = db.GetDB().QueryRow(query, readingTarget.UserID, readingTarget.Name, readingTarget.StartDate, readingTarget.EndDate, readingTarget.StartPage, readingTarget.EndPage, readingTarget.Pages).Scan(&readingTarget.ID)
+	err = db.GetDB().QueryRow(query, user.ID, readingTarget.Name, readingTarget.StartDate, readingTarget.EndDate, readingTarget.StartPage, readingTarget.EndPage, readingTarget.Pages).Scan(&readingTarget.ID)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error creating reading target", nil)
 		return
@@ -149,13 +147,19 @@ func GetAllReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := vars["id"]
 
+	decrypted, err := authorization.DecryptUserID(userID)
+	if err != nil {
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error decrypting process", nil)
+		return
+	}
+
 	//query := "SELECT * FROM reading_target where user_id = $1"
 	query := `
         SELECT *
         FROM reading_target
         WHERE user_id = $1;
     `
-	rows, err := db.GetDB().Query(query, userID)
+	rows, err := db.GetDB().Query(query, decrypted)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching get reading target by userID", nil)
 		return

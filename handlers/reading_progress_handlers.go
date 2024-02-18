@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"github.com/daffashafwan/tadarus-yuk/db"
+	"github.com/daffashafwan/tadarus-yuk/internal/authorization"
 	"github.com/daffashafwan/tadarus-yuk/internal/dto"
 	"github.com/daffashafwan/tadarus-yuk/internal/helpers"
 	"github.com/gorilla/mux"
@@ -126,7 +127,7 @@ func CreateReadingProgress(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	readedPage := getReadedPages(userID, targetID)
+	readedPage := getReadedPages(user.ID, targetID)
 	if containsValue(readedPage, readingProgress.CurrentPage) {
 		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Page "+ strconv.Itoa(readingProgress.CurrentPage) +"  already read", nil)
 		return
@@ -134,6 +135,13 @@ func CreateReadingProgress(w http.ResponseWriter, r *http.Request) {
 
 	readingProgress.UserID = user.ID
 	readingProgress.TargetID = readingTarget.ID
+
+	pageInfo, err := getPageInfo(strconv.Itoa(readingProgress.CurrentPage))
+	if err != nil {
+		log.Printf("[getPageInfo] error get page %d", readingProgress.CurrentPage)
+	}
+
+	readingProgress.PageInfo = pageInfo
 
 	query := "INSERT INTO reading_progress (user_id, target_id, current_page) VALUES ($1, $2, $3) RETURNING progress_id"
 	err = db.GetDB().QueryRow(query, readingProgress.UserID, readingProgress.TargetID, readingProgress.CurrentPage).Scan(&readingProgress.ID)
@@ -151,8 +159,14 @@ func GetAllReadingProgressByUserID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := vars["id"]
 
+	decryptUserID, err := authorization.DecryptUserID(userID)
+	if err != nil {
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error decrypting", nil)
+		return
+	}
+
 	query := "SELECT * FROM reading_progress where user_id = $1"
-	rows, err := db.GetDB().Query(query, userID)
+	rows, err := db.GetDB().Query(query, decryptUserID)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching get all reading progress", nil)
 		return
@@ -218,12 +232,11 @@ func getReadingProgressByID(readingProgressID string) (dto.ReadingProgress, erro
 	return readingProgress, nil
 }
 
-func getReadedPages(userID, targetID string) []int {
+func getReadedPages(userID int, targetID string) []int {
 	readedPages := make([]int, 0)
 
-	userIDConv, _ := strconv.Atoi(userID)
 	targetIDConv, _ := strconv.Atoi(targetID)
-	readingProgress, err := getReadingProgressByUserIDTargetID(userIDConv, targetIDConv)
+	readingProgress, err := getReadingProgressByUserIDTargetID(userID, targetIDConv)
 
 	if err != nil {
 		log.Printf("Error : %v", err.Error())

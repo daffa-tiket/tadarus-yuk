@@ -185,9 +185,15 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	userIDEncrypt, err := authorization.EncryptUserID(userID)
+	if err != nil {
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error encrypting process", nil)
+		return
+	}
+
 	// Return the authentication token
 	resp := map[string]interface{} {
-		"userID": userID,
+		"userID": userIDEncrypt,
 		"token": authToken,
 	}
 	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", resp)
@@ -196,13 +202,20 @@ func Login(w http.ResponseWriter, r *http.Request) {
 // getUserByID retrieves user data from the database by ID.
 func getUserByID(userID string) (dto.User, error) {
 	// Query user data from the database by ID
+
+	userIDDecrypt, err := authorization.DecryptUserID(userID)
+	if err != nil {
+		log.Printf("Error : %v", err.Error())
+		return dto.User{}, err
+	}
+
 	query := "SELECT * FROM users WHERE id = $1"
-	row := db.GetDB().QueryRow(query, userID)
+	row := db.GetDB().QueryRow(query, userIDDecrypt)
 
 	var user dto.User
-	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password)
+	err = row.Scan(&user.ID, &user.Username, &user.Email, &user.Password)
 	if err == sql.ErrNoRows {
-		return dto.User{}, fmt.Errorf("User with ID %s not found", userID)
+		return dto.User{}, fmt.Errorf("user with ID %s not found", userID)
 	} else if err != nil {
 		log.Printf("Error : %v", err.Error())
 		return dto.User{}, err

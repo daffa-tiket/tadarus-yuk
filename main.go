@@ -3,11 +3,14 @@ package main
 import (
 	"log"
 	"net/http"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/handlers"
-	"github.com/daffashafwan/tadarus-yuk/routes"
+
 	"github.com/daffashafwan/tadarus-yuk/db"
 	"github.com/daffashafwan/tadarus-yuk/env"
+	"github.com/daffashafwan/tadarus-yuk/external"
+	"github.com/daffashafwan/tadarus-yuk/internal/authorization"
+	"github.com/daffashafwan/tadarus-yuk/routes"
+	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -16,6 +19,10 @@ func main() {
 
 	// Connect to the database
 	db.ConnectDB()
+
+	external.InitQuranAPI()
+
+	authorization.InitSecret()
 
 	router := mux.NewRouter()
 

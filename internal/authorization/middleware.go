@@ -1,21 +1,36 @@
 package authorization
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
+	"io"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
 )
 
-var secretKey = []byte("your-secret-key")
-
 type CustomClaims struct {
 	UserID int    `json:"user_id"`
 	Role   string `json:"role"`
 	jwt.StandardClaims
+}
+
+var (
+	JwtSecretKey []byte
+	CipherSecretKey []byte
+)
+
+func InitSecret() {
+	JwtSecretKey = []byte(os.Getenv("JWT_SECRET_KEY"))
+	CipherSecretKey = []byte(os.Getenv("CIPHER_SECRET_KEY"))
 }
 
 func AuthenticationMiddleware(role string) mux.MiddlewareFunc {
@@ -62,7 +77,7 @@ func AuthenticationMiddleware(role string) mux.MiddlewareFunc {
 func parseAndValidateToken(tokenString string) (*CustomClaims, error) {
 	// Parse the token
 	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return secretKey, nil
+		return JwtSecretKey, nil
 	})
 
 	if err != nil {
@@ -92,11 +107,68 @@ func GenerateAuthToken(userID int, role string) (string, error) {
 	claims["exp"] = time.Now().Add(time.Hour * 24).Unix()
 
 	// Sign the token with a secret key
-	signedToken, err := token.SignedString(secretKey)
+	signedToken, err := token.SignedString(JwtSecretKey)
 	if err != nil {
 		log.Printf("Error : %v", err.Error())
 		return "", err
 	}
 
 	return signedToken, nil
+}
+
+func EncryptUserID(userID int) (string, error) {
+	block, err := aes.NewCipher(CipherSecretKey)
+	if err != nil {
+		return "", err
+	}
+
+	nonce := make([]byte, 12)
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", err
+	}
+
+	userIDBytes := []byte(fmt.Sprintf("%d", userID))
+
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	ciphertext := aesGCM.Seal(nil, nonce, userIDBytes, nil)
+
+	encryptedUserID := append(nonce, ciphertext...)
+
+	return base64.URLEncoding.EncodeToString(encryptedUserID), nil
+}
+
+func DecryptUserID(encryptedUserID string) (int, error) {
+	encryptedUserIDBytes, err := base64.URLEncoding.DecodeString(encryptedUserID)
+	if err != nil {
+		return 0, err
+	}
+
+	block, err := aes.NewCipher(CipherSecretKey)
+	if err != nil {
+		return 0, err
+	}
+
+	nonce := encryptedUserIDBytes[:12]
+	ciphertext := encryptedUserIDBytes[12:]
+
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return 0, err
+	}
+
+	decryptedUserIDBytes, err := aesGCM.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	decryptedUserID, err := strconv.Atoi(string(decryptedUserIDBytes))
+	if err != nil {
+		return 0, err
+	}
+
+	return decryptedUserID, nil
 }
