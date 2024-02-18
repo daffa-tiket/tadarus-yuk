@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/daffashafwan/tadarus-yuk/db"
 	"github.com/daffashafwan/tadarus-yuk/env"
@@ -30,10 +31,23 @@ func main() {
 	originsOk := handlers.AllowedOrigins([]string{"*"})
 	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"})
 
+	useTLS := os.Getenv("USE_TLS")
+
 	routes.RegisterRoutes(router)
 
-	port := ":9999"
-	log.Printf("Server listening on port %s...\n", port)
+	log.Print("Server starting\n")
 
-	log.Fatal(http.ListenAndServe(port, handlers.CORS(headersOk, originsOk, methodsOk)(router)))
+	var err error
+	if useTLS == "true" {
+		// Specify the paths to your SSL certificate and private key files
+		certFile := os.Getenv("CERT_FILE")
+	    keyFile := os.Getenv("KEY_FILE")
+		err = http.ListenAndServeTLS(":443", certFile, keyFile, handlers.CORS(headersOk, originsOk, methodsOk)(router))
+	} else {
+		err = http.ListenAndServe(":80", handlers.CORS(headersOk, originsOk, methodsOk)(router))
+	}
+
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
 }
