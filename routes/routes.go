@@ -47,5 +47,7 @@ func RegisterRoutes(router *mux.Router) {
 	generalRoute.HandleFunc("/reading-progress/{id}", handlers.GetReadingProgressByID).Methods(http.MethodGet)
 	generalRoute.HandleFunc("/reading-progress/{id}", handlers.UpdateReadingProgressByID).Methods(http.MethodPut)
 	generalRoute.HandleFunc("/reading-progress/{id}", handlers.DeleteReadingProgress).Methods(http.MethodDelete)
+
+	generalRoute.HandleFunc("/page-info/{pageNum}", handlers.GetPageInfoByPageNumber).Methods(http.MethodGet)
 	// Add more routes as needed
 }

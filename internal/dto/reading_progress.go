@@ -8,5 +8,4 @@ type ReadingProgress struct {
 	TargetID    int       `json:"targetID"`
 	CurrentPage int       `json:"currentPage"`
 	TimeStamp   time.Time `json:"timeStamp"`
-	PageInfo    PageInfo  `json:"pageInfo"`
 }

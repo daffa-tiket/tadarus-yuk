@@ -136,13 +136,6 @@ func CreateReadingProgress(w http.ResponseWriter, r *http.Request) {
 	readingProgress.UserID = user.ID
 	readingProgress.TargetID = readingTarget.ID
 
-	pageInfo, err := getPageInfo(strconv.Itoa(readingProgress.CurrentPage))
-	if err != nil {
-		log.Printf("[getPageInfo] error get page %d", readingProgress.CurrentPage)
-	}
-
-	readingProgress.PageInfo = pageInfo
-
 	query := "INSERT INTO reading_progress (user_id, target_id, current_page) VALUES ($1, $2, $3) RETURNING progress_id"
 	err = db.GetDB().QueryRow(query, readingProgress.UserID, readingProgress.TargetID, readingProgress.CurrentPage).Scan(&readingProgress.ID)
 	if err != nil {

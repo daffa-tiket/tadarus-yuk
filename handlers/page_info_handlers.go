@@ -2,12 +2,34 @@ package handlers
 
 import (
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/daffashafwan/tadarus-yuk/external"
 	"github.com/daffashafwan/tadarus-yuk/internal/dto"
+	"github.com/daffashafwan/tadarus-yuk/internal/helpers"
+	"github.com/gorilla/mux"
 )
+
+func GetPageInfoByPageNumber(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	pageNum := vars["pageNum"]
+
+	pageNumConv, err := strconv.Atoi(pageNum)
+	if err != nil || (pageNumConv < 0 || pageNumConv > 604) {
+		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Wrong Page Number", nil)
+		return
+	}
+
+	pageInfo, err := getPageInfo(pageNum)
+	if err != nil {
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error get page info  ID", nil)
+		return
+	}
+
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", pageInfo)
+}
 
 func getPageInfo(page string)(dto.PageInfo, error){
 	var pageInfo dto.PageInfo
