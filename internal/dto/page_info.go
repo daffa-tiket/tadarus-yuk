@@ -1,9 +1,9 @@
 package dto
 
 type PageInfo struct {
-	NumberOfVerses int                                `json:"numberOfVerses"`
-	AyatSajdah     int                                `json:"ayatSajdah"`
-	Surahs         map[string]ChapterInfo `json:"surahs"`
+	NumberOfVerses int           `json:"numberOfVerses"`
+	AyatSajdah     int           `json:"ayatSajdah"`
+	Surahs         []ChapterInfo `json:"surahs"`
 }
 
 type ChapterInfo struct {

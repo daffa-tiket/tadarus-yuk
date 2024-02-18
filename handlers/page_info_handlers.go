@@ -31,9 +31,9 @@ func GetPageInfoByPageNumber(w http.ResponseWriter, r *http.Request) {
 	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", pageInfo)
 }
 
-func getPageInfo(page string)(dto.PageInfo, error){
+func getPageInfo(page string) (dto.PageInfo, error) {
 	var pageInfo dto.PageInfo
-	surahMap := make(map[string]dto.ChapterInfo)
+	chapterInfos := make([]dto.ChapterInfo, 0)
 	pageRes, err := external.GetQuranAPIPages(page)
 	if err != nil {
 		log.Printf("[GetQuranCloudPages] error get page %s, with error : %s", page, err.Error())
@@ -41,7 +41,7 @@ func getPageInfo(page string)(dto.PageInfo, error){
 	}
 	pageInfo.NumberOfVerses = len(pageRes.Verses)
 	currentChapter := "0"
-	for _, verse  := range pageRes.Verses {
+	for _, verse := range pageRes.Verses {
 		result := strings.Split(verse.VerseKey, ":")
 		currentChapter = result[0]
 		surah, err := external.GetQuranAPIChapter(currentChapter)
@@ -50,8 +50,8 @@ func getPageInfo(page string)(dto.PageInfo, error){
 			continue
 		}
 		chapterInfo := dto.ChapterInfo{
-			Name: surah.Chapter.NameSimple,
-			VersesCount: surah.Chapter.VersesCount,
+			Name:            surah.Chapter.NameSimple,
+			VersesCount:     surah.Chapter.VersesCount,
 			RevelationPlace: surah.Chapter.RevelationPlace,
 		}
 
@@ -65,9 +65,20 @@ func getPageInfo(page string)(dto.PageInfo, error){
 		if surahInfo.ChapterInfo.ShortText != "" {
 			chapterInfo.Text = surahInfo.ChapterInfo.ShortText
 		}
-		surahMap[chapterInfo.Name] = chapterInfo	
+		if !isSurahAlreadyExist(chapterInfos, chapterInfo.Name) {
+			chapterInfos = append(chapterInfos, chapterInfo)
+		}
 	}
-	pageInfo.Surahs = surahMap
+	pageInfo.Surahs = chapterInfos
 
 	return pageInfo, nil
+}
+
+func isSurahAlreadyExist(chapterInfos []dto.ChapterInfo, surahName string) bool {
+	for _, obj := range chapterInfos {
+		if obj.Name == surahName {
+			return true
+		}
+	}
+	return false
 }
