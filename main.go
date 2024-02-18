@@ -42,9 +42,9 @@ func main() {
 		// Specify the paths to your SSL certificate and private key files
 		certFile := os.Getenv("CERT_FILE")
 	    keyFile := os.Getenv("KEY_FILE")
-		err = http.ListenAndServeTLS(":443", certFile, keyFile, handlers.CORS(headersOk, originsOk, methodsOk)(router))
+		err = http.ListenAndServeTLS(":8443", certFile, keyFile, handlers.CORS(headersOk, originsOk, methodsOk)(router))
 	} else {
-		err = http.ListenAndServe(":80", handlers.CORS(headersOk, originsOk, methodsOk)(router))
+		err = http.ListenAndServe(":8080", handlers.CORS(headersOk, originsOk, methodsOk)(router))
 	}
 
 	if err != nil {
