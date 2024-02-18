@@ -254,7 +254,7 @@ func containsValue(slice []int, value int) bool {
 
 func getReadingProgressByUserIDTargetID(userID, targetID int) ([]dto.ReadingProgress, error) {
 
-	query := "SELECT * FROM reading_progress WHERE user_id = $1 AND target_id = $2"
+	query := "SELECT * FROM reading_progress WHERE user_id = $1 AND target_id = $2 ORDER BY timestamp DESC"
 	rows, err := db.GetDB().Query(query, userID, targetID)
 	if err != nil {
 		log.Printf("Error : %v", err.Error())

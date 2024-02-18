@@ -179,10 +179,15 @@ func GetAllReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 			helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error getting reading progress in target", nil)
 			return
 		}
+		readingTarget.LastReadPage = 0
+		if len (progresses) > 0 {
+			readingTarget.LastReadPage = progresses[0].CurrentPage
+		}
 		readingTarget.Progress = float64(len(progresses)) / readingTarget.Pages * 100
 		readingTarget.Progress = float64(int(readingTarget.Progress*10)) / 10
 		readingTargets = append(readingTargets, readingTarget)
 	}
+	
 
 	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingTargets)
 }
