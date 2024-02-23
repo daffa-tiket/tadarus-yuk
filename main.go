@@ -10,6 +10,7 @@ import (
 	"github.com/daffashafwan/tadarus-yuk/external"
 	"github.com/daffashafwan/tadarus-yuk/internal/authorization"
 	"github.com/daffashafwan/tadarus-yuk/routes"
+	appHandlers "github.com/daffashafwan/tadarus-yuk/handlers"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 )
@@ -24,6 +25,8 @@ func main() {
 	external.InitQuranAPI()
 
 	authorization.InitSecret()
+
+	appHandlers.InitGoogle()
 
 	router := mux.NewRouter()
 
@@ -44,7 +47,7 @@ func main() {
 	    keyFile := os.Getenv("KEY_FILE")
 		err = http.ListenAndServeTLS(":8443", certFile, keyFile, handlers.CORS(headersOk, originsOk, methodsOk)(router))
 	} else {
-		err = http.ListenAndServe(":8080", handlers.CORS(headersOk, originsOk, methodsOk)(router))
+		err = http.ListenAndServe(":8989", handlers.CORS(headersOk, originsOk, methodsOk)(router))
 	}
 
 	if err != nil {

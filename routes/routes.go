@@ -15,6 +15,9 @@ func RegisterRoutes(router *mux.Router) {
 	router.HandleFunc("/users/login", handlers.Login).Methods(http.MethodPost)
 	router.HandleFunc("/admin/login", handlers.Login).Methods(http.MethodPost)
 
+	router.HandleFunc("/auth/login", handlers.GoogleLogin).Methods(http.MethodGet)
+	router.HandleFunc("/auth/callback", handlers.GoogleCallback).Methods(http.MethodGet)
+
 
 	generalRoute := router.PathPrefix("/api").Subrouter()
 	generalRoute.Use(authorization.AuthenticationMiddleware("user"))
