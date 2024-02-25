@@ -1,0 +1,2 @@
+ALTER TABLE users
+ADD COLUMN google_token VARCHAR(300);

@@ -35,15 +35,18 @@ func VerifyPassword(providedPassword, hashedPassword string) error {
 }
 
 func ResponseJSON(w http.ResponseWriter, err error, statusCode int, message string, data interface{}) {
+	messages := []string{
+		message,
+	}
 	if err != nil {
 		log.Printf("Error : %v", err.Error())
-		message = err.Error() + message
+		messages = append(messages, err.Error())
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	dataRes := dto.Response{
 		Code:    statusCode,
-		Message: message,
+		Message: messages,
 		Data:    data,
 	}
 	resp, _ := json.Marshal(dataRes)

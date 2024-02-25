@@ -5,6 +5,7 @@ type User struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	GoogleToken string `json:"-"`
 }
 
 type LoginRequest struct {
