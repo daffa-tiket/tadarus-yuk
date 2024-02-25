@@ -3,6 +3,7 @@ package helpers
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -51,4 +52,15 @@ func ResponseJSON(w http.ResponseWriter, err error, statusCode int, message stri
 	}
 	resp, _ := json.Marshal(dataRes)
 	w.Write(resp)
+}
+
+func BuildInClause(listID []int) string {
+    var inClause string
+    for i, id := range listID {
+        inClause += fmt.Sprintf("%d", id)
+        if i < len(listID)-1 {
+            inClause += ", "
+        }
+    }
+    return inClause
 }

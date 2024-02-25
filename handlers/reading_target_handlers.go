@@ -34,7 +34,7 @@ func GetAllReadingTarget(w http.ResponseWriter, r *http.Request) {
 	var readingTargets []dto.ReadingTarget
 	for rows.Next() {
 		var readingTarget dto.ReadingTarget
-		err := rows.Scan(&readingTarget.ID, &readingTarget.UserID, &readingTarget.StartDate, &readingTarget.EndDate, &readingTarget.Pages, &readingTarget.Name, &readingTarget.StartPage, &readingTarget.EndPage, &readingTarget.GoogleCalendarID)
+		err := rows.Scan(&readingTarget.ID, &readingTarget.UserID, &readingTarget.StartDate, &readingTarget.EndDate, &readingTarget.Pages, &readingTarget.Name, &readingTarget.StartPage, &readingTarget.EndPage, &readingTarget.GoogleCalendarID, &readingTarget.IsPublic)
 		if err != nil {
 			helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching reading target rows", nil)
 			return
@@ -93,7 +93,7 @@ func UpdateReadingTargetByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err:= getUserByID(userID)
+	user, err := getUserByID(userID)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error get user, update reading target", nil)
 		return
@@ -101,11 +101,11 @@ func UpdateReadingTargetByID(w http.ResponseWriter, r *http.Request) {
 
 	event, err := pushCalendarEvent(user.GoogleToken, externalDto.CalendarEvent{
 		GoogleCalendarID: readingTarget.GoogleCalendarID,
-		EventName: readingTarget.Name,
-		EventDescription: "Membaca Halaman " + strconv.Itoa(readingTarget.StartPage) +" sampai " + strconv.Itoa(readingTarget.EndPage),
-		StartDate: readingTarget.StartDate,
-		EndDate: readingTarget.EndDate,
-		Type: "EDIT",
+		EventName:        readingTarget.Name,
+		EventDescription: "Membaca Halaman " + strconv.Itoa(readingTarget.StartPage) + " sampai " + strconv.Itoa(readingTarget.EndPage),
+		StartDate:        readingTarget.StartDate,
+		EndDate:          readingTarget.EndDate,
+		Type:             "EDIT",
 	})
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error updating reading target calendar", nil)
@@ -122,9 +122,9 @@ func UpdateReadingTargetByID(w http.ResponseWriter, r *http.Request) {
 	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingTarget)
 }
 
-func updateReadingTarget(readingTarget dto.ReadingTarget) (error) {
-	query := "UPDATE reading_target SET name = $1, start_date = $2, end_date = $3, start_page = $4, end_page = $5, target_pages_per_interval = $6, google_calendar_id = $7 WHERE target_id = $8"
-	_, err := db.GetDB().Exec(query, readingTarget.Name, readingTarget.StartDate, readingTarget.EndDate, readingTarget.StartPage, readingTarget.EndPage, readingTarget.Pages, readingTarget.GoogleCalendarID, readingTarget.ID)
+func updateReadingTarget(readingTarget dto.ReadingTarget) error {
+	query := "UPDATE reading_target SET name = $1, start_date = $2, end_date = $3, start_page = $4, end_page = $5, target_pages_per_interval = $6, google_calendar_id = $7, is_public = $8 WHERE target_id = $9"
+	_, err := db.GetDB().Exec(query, readingTarget.Name, readingTarget.StartDate, readingTarget.EndDate, readingTarget.StartPage, readingTarget.EndPage, readingTarget.Pages, readingTarget.GoogleCalendarID, readingTarget.IsPublic, readingTarget.ID)
 	return err
 }
 
@@ -144,7 +144,7 @@ func DeleteReadingTarget(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err:= getUserByID(userID)
+	user, err := getUserByID(userID)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error get user, delet reading target", nil)
 		return
@@ -160,11 +160,11 @@ func DeleteReadingTarget(w http.ResponseWriter, r *http.Request) {
 
 	_, err = pushCalendarEvent(user.GoogleToken, externalDto.CalendarEvent{
 		GoogleCalendarID: readingTarget.GoogleCalendarID,
-		EventName: "",
+		EventName:        "",
 		EventDescription: "",
-		StartDate: "2006-01-02",
-		EndDate: "2006-01-02",
-		Type: "DELETE",
+		StartDate:        "2006-01-02",
+		EndDate:          "2006-01-02",
+		Type:             "DELETE",
 	})
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error delete, updating reading target calendar", nil)
@@ -201,19 +201,21 @@ func CreateReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := "INSERT INTO reading_target (user_id, name, start_date, end_date, start_page, end_page, target_pages_per_interval, google_calendar_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING target_id"
-	err = db.GetDB().QueryRow(query, user.ID, readingTarget.Name, readingTarget.StartDate, readingTarget.EndDate, readingTarget.StartPage, readingTarget.EndPage, readingTarget.Pages, readingTarget.GoogleCalendarID).Scan(&readingTarget.ID)
+	readingTarget.IsPublic = true
+
+	query := "INSERT INTO reading_target (user_id, name, start_date, end_date, start_page, end_page, target_pages_per_interval, google_calendar_id, is_public) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING target_id"
+	err = db.GetDB().QueryRow(query, user.ID, readingTarget.Name, readingTarget.StartDate, readingTarget.EndDate, readingTarget.StartPage, readingTarget.EndPage, readingTarget.Pages, readingTarget.GoogleCalendarID, readingTarget.IsPublic).Scan(&readingTarget.ID)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error creating reading target", nil)
 		return
 	}
 
 	event, err := pushCalendarEvent(user.GoogleToken, externalDto.CalendarEvent{
-		EventName: readingTarget.Name,
-		EventDescription: "Membaca Halaman " + strconv.Itoa(readingTarget.StartPage) +" sampai " + strconv.Itoa(readingTarget.EndPage),
-		StartDate: readingTarget.StartDate,
-		EndDate: readingTarget.EndDate,
-		Type: "ADD",
+		EventName:        readingTarget.Name,
+		EventDescription: "Membaca Halaman " + strconv.Itoa(readingTarget.StartPage) + " sampai " + strconv.Itoa(readingTarget.EndPage),
+		StartDate:        readingTarget.StartDate,
+		EndDate:          readingTarget.EndDate,
+		Type:             "ADD",
 	})
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error creating reading target calendar", nil)
@@ -258,7 +260,7 @@ func GetAllReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 	var readingTargets []dto.ReadingTarget
 	for rows.Next() {
 		var readingTarget dto.ReadingTarget
-		err := rows.Scan(&readingTarget.ID, &readingTarget.UserID, &readingTarget.StartDate, &readingTarget.EndDate, &readingTarget.Pages, &readingTarget.Name, &readingTarget.StartPage, &readingTarget.EndPage, &readingTarget.GoogleCalendarID)
+		err := rows.Scan(&readingTarget.ID, &readingTarget.UserID, &readingTarget.StartDate, &readingTarget.EndDate, &readingTarget.Pages, &readingTarget.Name, &readingTarget.StartPage, &readingTarget.EndPage, &readingTarget.GoogleCalendarID, &readingTarget.IsPublic)
 		if err != nil {
 			helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error scanning reading target rows", nil)
 			return
@@ -269,14 +271,13 @@ func GetAllReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		readingTarget.LastReadPage = 0
-		if len (progresses) > 0 {
+		if len(progresses) > 0 {
 			readingTarget.LastReadPage = progresses[0].CurrentPage
 		}
 		readingTarget.Progress = float64(len(progresses)) / readingTarget.Pages * 100
 		readingTarget.Progress = float64(int(readingTarget.Progress*10)) / 10
 		readingTargets = append(readingTargets, readingTarget)
 	}
-	
 
 	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingTargets)
 }
@@ -288,7 +289,7 @@ func getReadingTargetByID(readingTargetID string) (dto.ReadingTarget, error) {
 	row := db.GetDB().QueryRow(query, readingTargetID)
 
 	var readingTarget dto.ReadingTarget
-	err := row.Scan(&readingTarget.ID, &readingTarget.UserID, &readingTarget.StartDate, &readingTarget.EndDate, &readingTarget.Pages, &readingTarget.Name, &readingTarget.StartPage, &readingTarget.EndPage, &readingTarget.GoogleCalendarID)
+	err := row.Scan(&readingTarget.ID, &readingTarget.UserID, &readingTarget.StartDate, &readingTarget.EndDate, &readingTarget.Pages, &readingTarget.Name, &readingTarget.StartPage, &readingTarget.EndPage, &readingTarget.GoogleCalendarID, &readingTarget.IsPublic)
 	if err == sql.ErrNoRows {
 		return dto.ReadingTarget{}, fmt.Errorf("Reading Target with ID %s not found", readingTargetID)
 	} else if err != nil {
@@ -314,4 +315,28 @@ func isValidDateRange(startDateStr, endDateStr string) bool {
 
 	// Check if endDate is after startDate
 	return endDate.After(startDate)
+}
+
+func getAllPublicReadingTarget() ([]int,[]dto.ReadingTarget, error) {
+	// Query readingTarget data from the database by ID
+	query := "SELECT * FROM reading_target WHERE is_public = $1"
+	rows, err := db.GetDB().Query(query, true)
+	if err != nil {
+		return []int{}, []dto.ReadingTarget{}, err
+	}
+	defer rows.Close()
+
+	var readingTargets []dto.ReadingTarget
+	var ids []int
+	for rows.Next() {
+		var readingTarget dto.ReadingTarget
+		err := rows.Scan(&readingTarget.ID, &readingTarget.UserID, &readingTarget.StartDate, &readingTarget.EndDate, &readingTarget.Pages, &readingTarget.Name, &readingTarget.StartPage, &readingTarget.EndPage, &readingTarget.GoogleCalendarID, &readingTarget.IsPublic)
+		if err != nil {
+			return []int{}, []dto.ReadingTarget{}, err
+		}
+		ids = append(ids, readingTarget.ID)
+		readingTargets = append(readingTargets, readingTarget)
+	}
+
+	return ids, readingTargets, nil
 }

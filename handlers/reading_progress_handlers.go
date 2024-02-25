@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/daffashafwan/tadarus-yuk/db"
 	"github.com/daffashafwan/tadarus-yuk/internal/authorization"
@@ -274,4 +275,32 @@ func getReadingProgressByUserIDTargetID(userID, targetID int) ([]dto.ReadingProg
 	}
 
 	return readingProgresss, nil
+}
+
+func getReadingProgressByTargetIDsAndTimeRange(targetIDs []int, startTime, endTime time.Time) ([]dto.ReadingProgress, error) {
+    query := `
+        SELECT * FROM reading_progress
+        WHERE target_id IN ($1)
+        AND last_update_timestamp >= $2 AND last_update_timestamp <= $3
+    `
+
+    rows, err := db.GetDB().Query(query, helpers.BuildInClause(targetIDs),startTime, endTime)
+    if err != nil {
+        log.Printf("Error: %v", err.Error())
+        return []dto.ReadingProgress{}, err
+    }
+    defer rows.Close()
+
+    var readingProgresss []dto.ReadingProgress
+    for rows.Next() {
+        var readingProgress dto.ReadingProgress
+        err := rows.Scan(&readingProgress.ID, &readingProgress.UserID, &readingProgress.TargetID, &readingProgress.CurrentPage, &readingProgress.TimeStamp)
+        if err != nil {
+            log.Printf("Error: %v", err.Error())
+            return []dto.ReadingProgress{}, err
+        }
+        readingProgresss = append(readingProgresss, readingProgress)
+    }
+
+    return readingProgresss, nil
 }

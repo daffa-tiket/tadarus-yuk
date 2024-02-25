@@ -317,3 +317,21 @@ func getAdminByUsername(username string) (dto.Admin, error) {
 
 	return admin, nil
 }
+
+func getUserByIDWithoutEncrypt(userID int) (dto.User, error) {
+	// Query user data from the database by ID
+
+	query := "SELECT * FROM users WHERE id = $1"
+	row := db.GetDB().QueryRow(query, userID)
+
+	var user dto.User
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.GoogleToken)
+	if err == sql.ErrNoRows {
+		return dto.User{}, fmt.Errorf("user with ID %s not found", userID)
+	} else if err != nil {
+		log.Printf("Error : %v", err.Error())
+		return dto.User{}, err
+	}
+
+	return user, nil
+}
