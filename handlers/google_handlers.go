@@ -4,8 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 
+	"github.com/daffashafwan/tadarus-yuk/internal/authorization"
+	"github.com/daffashafwan/tadarus-yuk/internal/dto"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
@@ -49,13 +52,32 @@ func GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = getUserInfo(token.AccessToken)
+	user, err := getUserInfo(token.AccessToken)
 	if err != nil {
 		http.Error(w, "Failed to get user info", http.StatusInternalServerError)
 		return
 	}
 
-	redirectURL := "" // Change this to your desired success page URL
+	userByEmail, _ := getUserByEmail(user.Email)
+	if userByEmail.Email == "" {
+		err = createUser(dto.User{
+			Username: user.ID,
+			Email: user.Email,
+		}, "")
+		if err != nil {
+			http.Error(w, "Failed create user", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	authToken, err := authorization.GenerateAuthToken(userByEmail.ID, "user")
+	if err != nil {
+		http.Error(w, "Failed to auth", http.StatusInternalServerError)
+		return
+	}
+	
+
+	redirectURL := authConfig.PostLoginURL + "?user=" + url.QueryEscape(userByEmail.Username) + "&token="+ authToken // Change this to your desired success page URL
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
 

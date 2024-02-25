@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/daffashafwan/tadarus-yuk/db"
-	"github.com/daffashafwan/tadarus-yuk/internal/authorization"
 	"github.com/daffashafwan/tadarus-yuk/internal/dto"
 	"github.com/daffashafwan/tadarus-yuk/internal/helpers"
 	"github.com/gorilla/mux"
@@ -115,7 +114,7 @@ func CreateReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := vars["id"]
 
-	user, err := getUserByID(userID)
+	user, err := getUserByUsername(userID)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Error user not found", nil)
 		return
@@ -147,7 +146,7 @@ func GetAllReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := vars["id"]
 
-	decrypted, err := authorization.DecryptUserID(userID)
+	user, err := getUserByUsername(userID)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error decrypting process", nil)
 		return
@@ -159,7 +158,7 @@ func GetAllReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
         FROM reading_target
         WHERE user_id = $1;
     `
-	rows, err := db.GetDB().Query(query, decrypted)
+	rows, err := db.GetDB().Query(query, user.ID)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching get reading target by userID", nil)
 		return

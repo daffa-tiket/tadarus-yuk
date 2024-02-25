@@ -110,7 +110,7 @@ func CreateReadingProgress(w http.ResponseWriter, r *http.Request) {
 	userID := vars["id"]
 	targetID := vars["tid"]
 
-	user, err := getUserByID(userID)
+	user, err := getUserByUsername(userID)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Error get user", nil)
 		return
@@ -185,7 +185,7 @@ func GetAllReadingProgressByUserIDTargetID(w http.ResponseWriter, r *http.Reques
 	userID := vars["id"]
 	targetID := vars["tid"]
 
-	user, err := getUserByID(userID)
+	user, err := getUserByUsername(userID)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusBadRequest, "Error get user", nil)
 		return

@@ -172,3 +172,50 @@ func DecryptUserID(encryptedUserID string) (int, error) {
 
 	return decryptedUserID, nil
 }
+
+func EncryptEmail(email string) (string, error) {
+	block, err := aes.NewCipher(CipherSecretKey)
+	if err != nil {
+		return "", err
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+		return "", err
+	}
+
+	ciphertext := gcm.Seal(nonce, nonce, []byte(email), nil)
+	return base64.StdEncoding.EncodeToString(ciphertext), nil
+}
+
+func DecryptEmail(encryptedEmail string) (string, error) {
+	encryptedEmailBytes, err := base64.URLEncoding.DecodeString(encryptedEmail)
+	if err != nil {
+		return "", err
+	}
+
+	block, err := aes.NewCipher(CipherSecretKey)
+	if err != nil {
+		return "", err
+	}
+
+	nonce := encryptedEmailBytes[:12]
+	ciphertext := encryptedEmailBytes[12:]
+
+	aesGCM, err := cipher.NewGCM(block)
+	if err != nil {
+		return "", err
+	}
+
+	decryptedEmailBytes, err := aesGCM.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return string(decryptedEmailBytes), nil
+}

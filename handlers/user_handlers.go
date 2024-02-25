@@ -82,14 +82,19 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		helpers.ResponseJSON(w, err, http.StatusBadRequest, "username has taken", nil)
 		return
 	}
-	query := "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id"
-	err = db.GetDB().QueryRow(query, user.Username, user.Email, hashedPassword).Scan(&user.ID)
+	err = createUser(user, hashedPassword)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error creating user", nil)
 		return
 	}
 
 	helpers.ResponseJSON(w, err, http.StatusCreated, "SUCCESS", user)
+}
+
+func createUser(user dto.User, hashedPassword string) error {
+	query := "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id"
+	err := db.GetDB().QueryRow(query, user.Username, user.Email, hashedPassword).Scan(&user.ID)
+	return err
 }
 
 // UpdateUserHandler handles requests to update a user by ID.
@@ -261,6 +266,23 @@ func getUserByUsername(username string) (dto.User, error) {
 	// Query user data from the database by username
 	query := "SELECT * FROM users WHERE username = $1"
 	row := db.GetDB().QueryRow(query, username)
+
+	var user dto.User
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password)
+	if err == sql.ErrNoRows {
+		return dto.User{}, fmt.Errorf("username not found")
+	} else if err != nil {
+		log.Printf("Error : %v", err.Error())
+		return dto.User{}, err
+	}
+
+	return user, nil
+}
+
+func getUserByEmail(email string) (dto.User, error) {
+	// Query user data from the database by username
+	query := "SELECT * FROM users WHERE email = $1"
+	row := db.GetDB().QueryRow(query, email)
 
 	var user dto.User
 	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password)
