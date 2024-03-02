@@ -85,7 +85,7 @@ func GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 		details := getReadingTargetByUserIDForLeaderboard(val.Key, readingTargets)
 		user, _ := getUserByIDWithoutEncrypt(val.Key)
 		ranks = append(ranks, dto.Rank{
-			Username: user.Email,
+			Username: user.DisplayName,
 			Pace:     float64(val.Value) / divider,
 			Details:  details,
 		})

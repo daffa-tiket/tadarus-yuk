@@ -103,7 +103,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	userID := vars["id"]
 
 	// Fetch user data from the database by ID
-	user, err := getUserByID(userID)
+	user, err := getUserByUsername(userID)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching user data", nil)
 		return
@@ -119,8 +119,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	// Update user data based on the request body
 	// For example, update user fields like username, email, etc.
-	user.Username = updatedUser.Username
-	user.Email = updatedUser.Email
+	user.DisplayName = updatedUser.DisplayName
 	// Update other fields as needed
 
 	// Save the updated user data to the database
