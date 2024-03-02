@@ -9,3 +9,8 @@ type ReadingProgress struct {
 	CurrentPage int       `json:"currentPage"`
 	TimeStamp   time.Time `json:"timeStamp"`
 }
+
+type ReadingProgressAggregated struct {
+	ReadingProgress []ReadingProgress `json:"readingProgress"`
+	ReadingProgressSorted map[int]map[string][]ReadingProgress `json:"readingProgressSorted"`
+}

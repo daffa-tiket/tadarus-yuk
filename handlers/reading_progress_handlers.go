@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/daffashafwan/tadarus-yuk/db"
-	"github.com/daffashafwan/tadarus-yuk/internal/authorization"
 	"github.com/daffashafwan/tadarus-yuk/internal/dto"
 	"github.com/daffashafwan/tadarus-yuk/internal/helpers"
 	"github.com/gorilla/mux"
@@ -153,14 +152,14 @@ func GetAllReadingProgressByUserID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	userID := vars["id"]
 
-	decryptUserID, err := authorization.DecryptUserID(userID)
+	user, err := getUserByUsername(userID)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error decrypting", nil)
 		return
 	}
 
-	query := "SELECT * FROM reading_progress where user_id = $1"
-	rows, err := db.GetDB().Query(query, decryptUserID)
+	query := "SELECT * FROM reading_progress where user_id = $1 ORDER BY last_update_timestamp ASC"
+	rows, err := db.GetDB().Query(query, user.ID)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error fetching get all reading progress", nil)
 		return
@@ -168,6 +167,7 @@ func GetAllReadingProgressByUserID(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	var readingProgresses []dto.ReadingProgress
+	readingProgressSorted := make(map[int]map[string][]dto.ReadingProgress)
 	for rows.Next() {
 		var readingProgress dto.ReadingProgress
 		err := rows.Scan(&readingProgress.ID, &readingProgress.UserID, &readingProgress.TargetID, &readingProgress.CurrentPage, &readingProgress.TimeStamp)
@@ -175,10 +175,26 @@ func GetAllReadingProgressByUserID(w http.ResponseWriter, r *http.Request) {
 			helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error scanning all reading progress by userID", nil)
 			return
 		}
+		if readingProgressSorted[readingProgress.TimeStamp.Year()] == nil {
+			readingProgressSorted[readingProgress.TimeStamp.Year()] = make(map[string][]dto.ReadingProgress)
+		}
+		if readingProgressSorted[readingProgress.TimeStamp.Year()][readingProgress.TimeStamp.Month().String()] == nil {
+			readingProgressSorted[readingProgress.TimeStamp.Year()][readingProgress.TimeStamp.Month().String()] = []dto.ReadingProgress{}
+		}
+		
+		readingProgressSorted[readingProgress.TimeStamp.Year()][readingProgress.TimeStamp.Month().String()] = append(
+			readingProgressSorted[readingProgress.TimeStamp.Year()][readingProgress.TimeStamp.Month().String()],
+			readingProgress,
+		)
 		readingProgresses = append(readingProgresses, readingProgress)
 	}
 
-	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingProgresses)
+	response := dto.ReadingProgressAggregated{
+		ReadingProgress: readingProgresses,
+		ReadingProgressSorted: readingProgressSorted,
+	}
+
+	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", response)
 }
 
 func GetAllReadingProgressByUserIDTargetID(w http.ResponseWriter, r *http.Request) {
@@ -278,13 +294,17 @@ func getReadingProgressByUserIDTargetID(userID, targetID int) ([]dto.ReadingProg
 }
 
 func getReadingProgressByTargetIDsAndTimeRange(targetIDs []int, startTime, endTime time.Time) ([]dto.ReadingProgress, error) {
-    query := `
-        SELECT * FROM reading_progress
-        WHERE target_id IN ($1)
-        AND last_update_timestamp >= $2 AND last_update_timestamp <= $3
-    `
+    inClause := helpers.BuildInClause(targetIDs)
 
-    rows, err := db.GetDB().Query(query, helpers.BuildInClause(targetIDs),startTime, endTime)
+	query := fmt.Sprintf(`
+        SELECT * FROM reading_progress
+        WHERE target_id IN (%s)
+        AND last_update_timestamp >= $1 AND last_update_timestamp <= $2
+    `, inClause)
+
+	fmt.Println(startTime.String())
+
+    rows, err := db.GetDB().Query(query, startTime, endTime)
     if err != nil {
         log.Printf("Error: %v", err.Error())
         return []dto.ReadingProgress{}, err

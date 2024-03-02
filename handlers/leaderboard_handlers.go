@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/daffashafwan/tadarus-yuk/internal/dto"
@@ -15,7 +16,6 @@ var (
 	leaderboardCache = make(map[string]dto.Leaderboard)
 )
 
-
 func GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	leaderboardType := queryParams.Get("type")
@@ -23,23 +23,21 @@ func GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 	progress := make(map[int]int)
 	now := time.Now()
 
-	if now.Hour() >= 23 {
-        if leaderboard, ok := leaderboardCache[leaderboardType]; ok {
-            // Use the cached data directly
-            helpers.ResponseJSON(w, nil, http.StatusOK, "SUCCESS", leaderboard)
-            return
-        }
-    }
+	if leaderboard, ok := leaderboardCache[leaderboardType]; ok && (now.Hour() >= 3 && now.Hour() <= 21){
+		// Use the cached data directly
+		helpers.ResponseJSON(w, nil, http.StatusOK, "SUCCESS", leaderboard)
+		return
+	}
 
 	var startTime, endTime time.Time
 	var divider float64
-	switch leaderboardType{
+	switch leaderboardType {
 	case "daily":
 		endTime = now
 		startTime = endTime.AddDate(0, 0, -1)
 		divider = 1
 	case "weekly":
-		endTime = now.AddDate(0, 0, int(now.Weekday()))
+		endTime = now
 		startTime = endTime.AddDate(0, 0, -6)
 		divider = 7
 	case "last30days":
@@ -54,12 +52,12 @@ func GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 	ids, readingTargets, err := getAllPublicReadingTarget()
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error get leaderboard", nil)
-        return
+		return
 	}
 	readingProgress, err := getReadingProgressByTargetIDsAndTimeRange(ids, startTime, endTime)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error get leaderboard", nil)
-        return
+		return
 	}
 
 	for _, rp := range readingProgress {
@@ -88,21 +86,20 @@ func GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 		user, _ := getUserByIDWithoutEncrypt(val.Key)
 		ranks = append(ranks, dto.Rank{
 			Username: user.Email,
-			Pace: float64(val.Value) / divider,
-			Details: details,
+			Pace:     float64(val.Value) / divider,
+			Details:  details,
 		})
 	}
 
 	if _, ok := leaderboardCache[leaderboardType]; !ok {
-        leaderboardCache[leaderboardType] = dto.Leaderboard{}
-    }
+		leaderboardCache[leaderboardType] = dto.Leaderboard{}
+	}
 
-    leaderboardCache[leaderboardType] = dto.Leaderboard{
-        Type:        leaderboardType,
-        Ranks:       ranks,
-        LastUpdated: now,
-    }
-
+	leaderboardCache[leaderboardType] = dto.Leaderboard{
+		Type:        leaderboardType,
+		Ranks:       ranks,
+		LastUpdated: now,
+	}
 
 	helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", leaderboardCache[leaderboardType])
 }
@@ -112,11 +109,13 @@ func getReadingTargetByUserIDForLeaderboard(userID int, readingTarget []dto.Read
 
 	for _, rt := range readingTarget {
 		if rt.UserID == userID {
+			startDate := strings.Split(rt.StartDate, "T")
+			endDate := strings.Split(rt.EndDate, "T")
 			result = append(result, dto.Detail{
-				ReadingTargetName: rt.Name,
+				ReadingTargetName:        rt.Name,
 				ReadingTargetDescription: "Halaman " + strconv.Itoa(rt.StartPage) + " - " + strconv.Itoa(rt.EndPage),
-				ReadingTargetDate: "Mulai : " + rt.StartDate + ", Selesai : " + rt.EndDate,
-				ReadingTargetProgress: rt.Progress,
+				ReadingTargetDate:        "Mulai : " + startDate[0] + ", Selesai : " + endDate[0],
+				ReadingTargetProgress:    rt.Progress,
 			})
 		}
 	}
