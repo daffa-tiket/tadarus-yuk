@@ -51,6 +51,7 @@ func GoogleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func GoogleCallback(w http.ResponseWriter, r *http.Request) {
+	var isFirstLogin = "false"
 	code := r.URL.Query().Get("code")
 	token, err := authConfig.GoogleConfig.Exchange(r.Context(), code)
 	if err != nil {
@@ -83,6 +84,8 @@ func GoogleCallback(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed set user token", http.StatusInternalServerError)
 			return
 		}
+
+		isFirstLogin = "true"
 	}
 
 	authToken, err := authorization.GenerateAuthToken(userByEmail.ID, "user")
@@ -91,7 +94,7 @@ func GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	redirectURL := authConfig.PostLoginURL + "?user=" + url.QueryEscape(userByEmail.Username) + "&token=" + authToken // Change this to your desired success page URL
+	redirectURL := authConfig.PostLoginURL + "?user=" + url.QueryEscape(userByEmail.Username) + "&token=" + authToken + "&isFirstLogin=" + isFirstLogin // Change this to your desired success page URL
 	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
 }
 
