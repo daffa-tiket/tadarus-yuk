@@ -92,8 +92,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func createUser(user dto.User, hashedPassword string) error {
-	query := "INSERT INTO users (username, email, password, google_token) VALUES ($1, $2, $3, $4) RETURNING id"
-	err := db.GetDB().QueryRow(query, user.Username, user.Email, hashedPassword, user.GoogleToken).Scan(&user.ID)
+	query := "INSERT INTO users (username, email, password, google_token, display_name) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+	err := db.GetDB().QueryRow(query, user.Username, user.Email, hashedPassword, user.GoogleToken, user.Email).Scan(&user.ID)
 	return err
 }
 
@@ -134,8 +134,8 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateUser(user dto.User) (error) {
-	query := "UPDATE users SET username = $1, email = $2, google_token = $3 WHERE id = $4"
-	_, err := db.GetDB().Exec(query, user.Username, user.Email, user.GoogleToken, user.ID)
+	query := "UPDATE users SET username = $1, email = $2, google_token = $3, display_name = $4 WHERE id = $5"
+	_, err := db.GetDB().Exec(query, user.Username, user.Email, user.GoogleToken, user.DisplayName, user.ID)
 	return err
 }
 
@@ -223,7 +223,7 @@ func getUserByID(userID string) (dto.User, error) {
 	row := db.GetDB().QueryRow(query, userIDDecrypt)
 
 	var user dto.User
-	err = row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.GoogleToken)
+	err = row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.GoogleToken, &user.DisplayName)
 	if err == sql.ErrNoRows {
 		return dto.User{}, fmt.Errorf("user with ID %s not found", userID)
 	} else if err != nil {
@@ -273,7 +273,7 @@ func getUserByUsername(username string) (dto.User, error) {
 	row := db.GetDB().QueryRow(query, username)
 
 	var user dto.User
-	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.GoogleToken)
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.GoogleToken, &user.DisplayName)
 	if err == sql.ErrNoRows {
 		return dto.User{}, fmt.Errorf("username not found")
 	} else if err != nil {
@@ -290,7 +290,7 @@ func getUserByEmail(email string) (dto.User, error) {
 	row := db.GetDB().QueryRow(query, email)
 
 	var user dto.User
-	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.GoogleToken)
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.GoogleToken, &user.DisplayName)
 	if err == sql.ErrNoRows {
 		return dto.User{}, fmt.Errorf("username not found")
 	} else if err != nil {
@@ -325,7 +325,7 @@ func getUserByIDWithoutEncrypt(userID int) (dto.User, error) {
 	row := db.GetDB().QueryRow(query, userID)
 
 	var user dto.User
-	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.GoogleToken)
+	err := row.Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.GoogleToken, &user.DisplayName)
 	if err == sql.ErrNoRows {
 		return dto.User{}, fmt.Errorf("user with ID %s not found", userID)
 	} else if err != nil {

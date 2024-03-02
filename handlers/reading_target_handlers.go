@@ -201,8 +201,6 @@ func CreateReadingTargetByUserID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	readingTarget.IsPublic = true
-
 	query := "INSERT INTO reading_target (user_id, name, start_date, end_date, start_page, end_page, target_pages_per_interval, google_calendar_id, is_public) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING target_id"
 	err = db.GetDB().QueryRow(query, user.ID, readingTarget.Name, readingTarget.StartDate, readingTarget.EndDate, readingTarget.StartPage, readingTarget.EndPage, readingTarget.Pages, readingTarget.GoogleCalendarID, readingTarget.IsPublic).Scan(&readingTarget.ID)
 	if err != nil {

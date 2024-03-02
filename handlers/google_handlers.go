@@ -51,7 +51,7 @@ func GoogleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func GoogleCallback(w http.ResponseWriter, r *http.Request) {
-	var isFirstLogin = "false"
+	var isFirstLogin = "true"
 	code := r.URL.Query().Get("code")
 	token, err := authConfig.GoogleConfig.Exchange(r.Context(), code)
 	if err != nil {
@@ -85,7 +85,7 @@ func GoogleCallback(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		isFirstLogin = "true"
+		isFirstLogin = "false"
 	}
 
 	authToken, err := authorization.GenerateAuthToken(userByEmail.ID, "user")
