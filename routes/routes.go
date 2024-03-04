@@ -10,19 +10,21 @@ import (
 // RegisterRoutes registers all the routes for the application.
 func RegisterRoutes(router *mux.Router) {
 
-	router.HandleFunc("/", handlers.Home).Methods(http.MethodGet)
-	router.HandleFunc("/users/register", handlers.Register).Methods(http.MethodPost)
-	router.HandleFunc("/users/login", handlers.Login).Methods(http.MethodPost)
-	router.HandleFunc("/admin/login", handlers.Login).Methods(http.MethodPost)
+	mainPrefix := "/tadarus-app"
+	mainRoute := router.PathPrefix(mainPrefix).Subrouter()
+	mainRoute.HandleFunc("/", handlers.Home).Methods(http.MethodGet)
+	mainRoute.HandleFunc("/users/register", handlers.Register).Methods(http.MethodPost)
+	mainRoute.HandleFunc("/users/login", handlers.Login).Methods(http.MethodPost)
+	mainRoute.HandleFunc("/admin/login", handlers.Login).Methods(http.MethodPost)
 
-	router.HandleFunc("/auth/login", handlers.GoogleLogin).Methods(http.MethodGet)
-	router.HandleFunc("/auth/callback", handlers.GoogleCallback).Methods(http.MethodGet)
+	mainRoute.HandleFunc("/auth/login", handlers.GoogleLogin).Methods(http.MethodGet)
+	mainRoute.HandleFunc("/auth/callback", handlers.GoogleCallback).Methods(http.MethodGet)
 
 
-	generalRoute := router.PathPrefix("/api").Subrouter()
+	generalRoute := mainRoute.PathPrefix("/api").Subrouter()
 	generalRoute.Use(authorization.AuthenticationMiddleware("user"))
 
-	adminRoute := router.PathPrefix("/api").Subrouter()
+	adminRoute := mainRoute.PathPrefix("/api").Subrouter()
 	adminRoute.Use(authorization.AuthenticationMiddleware("admin"))
 
 	// users
