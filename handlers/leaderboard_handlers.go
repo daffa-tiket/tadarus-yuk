@@ -19,6 +19,7 @@ var (
 func GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 	queryParams := r.URL.Query()
 	leaderboardType := queryParams.Get("type")
+	userID := queryParams.Get("userID")
 
 	progress := make(map[int]int)
 	now := time.Now()
@@ -43,14 +44,20 @@ func GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ids, readingTargets, err := getAllPublicReadingTarget()
+	user, err := getUserByUsername(userID)
 	if err != nil {
-		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error get leaderboard", nil)
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "[leaderboard] Error get user", nil)
+		return
+	}
+
+	ids, readingTargets, err := getAllPublicReadingTarget(user.ID)
+	if err != nil {
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "[leaderboard] Error get leaderboard", nil)
 		return
 	}
 	readingProgress, err := getReadingProgressByTargetIDsAndTimeRange(ids, startTime, endTime)
 	if err != nil {
-		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error get leaderboard", nil)
+		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "[leaderboard] Error get leaderboard", nil)
 		return
 	}
 

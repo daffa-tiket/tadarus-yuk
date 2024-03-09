@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -315,8 +316,9 @@ func isValidDateRange(startDateStr, endDateStr string) bool {
 	return endDate.After(startDate)
 }
 
-func getAllPublicReadingTarget() ([]int,[]dto.ReadingTarget, error) {
+func getAllPublicReadingTarget(userID int) ([]int,[]dto.ReadingTarget, error) {
 	// Query readingTarget data from the database by ID
+	var isEligible bool
 	query := "SELECT * FROM reading_target WHERE is_public = $1"
 	rows, err := db.GetDB().Query(query, true)
 	if err != nil {
@@ -334,6 +336,13 @@ func getAllPublicReadingTarget() ([]int,[]dto.ReadingTarget, error) {
 		}
 		ids = append(ids, readingTarget.ID)
 		readingTargets = append(readingTargets, readingTarget)
+		if readingTarget.UserID == userID {
+			isEligible = true
+		}
+	}
+
+	if !isEligible {
+		return []int{}, []dto.ReadingTarget{}, errors.New("user didn't have any public reading target")
 	}
 
 	return ids, readingTargets, nil
