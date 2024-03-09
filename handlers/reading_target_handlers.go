@@ -61,6 +61,7 @@ func GetReadingTargetByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateReadingTargetByID(w http.ResponseWriter, r *http.Request) {
+	var isPublicChanged bool
 	vars := mux.Vars(r)
 	readingTargetID := vars["id"]
 
@@ -82,19 +83,18 @@ func UpdateReadingTargetByID(w http.ResponseWriter, r *http.Request) {
 	readingTarget.EndDate = readingTargetUpdate.EndDate
 	readingTarget.Pages = readingTargetUpdate.Pages
 	if readingTarget.IsPublic != readingTargetUpdate.IsPublic {
-		readingTarget.IsPublic = readingTargetUpdate.IsPublic
-		err = updateReadingTarget(readingTarget)
-		if err != nil {
-			helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error updating reading target", nil)
-			return
-		}
-		helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingTarget)
-		return
+		isPublicChanged = true
 	}
+	readingTarget.IsPublic = readingTargetUpdate.IsPublic
 
 	err = updateReadingTarget(readingTarget)
 	if err != nil {
 		helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error updating reading target", nil)
+		return
+	}
+
+	if isPublicChanged {
+		helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingTarget)
 		return
 	}
 
