@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -85,9 +86,11 @@ func GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 	for _, val := range progressSlice {
 		details := getReadingTargetByUserIDForLeaderboard(val.Key, readingTargets)
 		user, _ := getUserByIDWithoutEncrypt(val.Key)
+		pace := float64(val.Value) / divider
+		paceFormatted := fmt.Sprintf("%.3f", pace)
 		ranks = append(ranks, dto.Rank{
 			Username: user.DisplayName,
-			Pace:     float64(val.Value) / divider,
+			Pace:     paceFormatted,
 			Details:  details,
 		})
 	}
