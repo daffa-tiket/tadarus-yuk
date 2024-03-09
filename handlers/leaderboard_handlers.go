@@ -110,9 +110,13 @@ func GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 
 func getReadingTargetByUserIDForLeaderboard(userID int, readingTarget []dto.ReadingTarget) []dto.Detail {
 	var result []dto.Detail
-
 	for _, rt := range readingTarget {
-		if rt.UserID == userID {
+		var isEligible bool
+		progress, _ := getReadingProgressByUserIDTargetID(userID, rt.ID)
+		if len(progress) == 0 {
+			isEligible = true
+		}
+		if rt.UserID == userID && isEligible{
 			startDate := strings.Split(rt.StartDate, "T")
 			endDate := strings.Split(rt.EndDate, "T")
 			result = append(result, dto.Detail{
