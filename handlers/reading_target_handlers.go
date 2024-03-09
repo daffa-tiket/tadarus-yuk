@@ -82,6 +82,7 @@ func UpdateReadingTargetByID(w http.ResponseWriter, r *http.Request) {
 	readingTarget.EndDate = readingTargetUpdate.EndDate
 	readingTarget.Pages = readingTargetUpdate.Pages
 	if readingTarget.IsPublic != readingTargetUpdate.IsPublic {
+		readingTarget.IsPublic = readingTargetUpdate.IsPublic
 		err = updateReadingTarget(readingTarget)
 		if err != nil {
 			helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error updating reading target", nil)
