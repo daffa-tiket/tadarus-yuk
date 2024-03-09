@@ -23,12 +23,6 @@ func GetLeaderboard(w http.ResponseWriter, r *http.Request) {
 	progress := make(map[int]int)
 	now := time.Now()
 
-	if leaderboard, ok := leaderboardCache[leaderboardType]; ok && (now.Hour() >= 3 && now.Hour() <= 21){
-		// Use the cached data directly
-		helpers.ResponseJSON(w, nil, http.StatusOK, "SUCCESS", leaderboard)
-		return
-	}
-
 	var startTime, endTime time.Time
 	var divider float64
 	switch leaderboardType {
