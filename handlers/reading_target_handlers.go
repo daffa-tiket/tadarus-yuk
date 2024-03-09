@@ -81,7 +81,15 @@ func UpdateReadingTargetByID(w http.ResponseWriter, r *http.Request) {
 	readingTarget.StartDate = readingTargetUpdate.StartDate
 	readingTarget.EndDate = readingTargetUpdate.EndDate
 	readingTarget.Pages = readingTargetUpdate.Pages
-	readingTarget.IsPublic = readingTargetUpdate.IsPublic
+	if readingTarget.IsPublic != readingTargetUpdate.IsPublic {
+		err = updateReadingTarget(readingTarget)
+		if err != nil {
+			helpers.ResponseJSON(w, err, http.StatusInternalServerError, "Error updating reading target", nil)
+			return
+		}
+		helpers.ResponseJSON(w, err, http.StatusOK, "SUCCESS", readingTarget)
+		return
+	}
 
 	err = updateReadingTarget(readingTarget)
 	if err != nil {
@@ -317,7 +325,7 @@ func isValidDateRange(startDateStr, endDateStr string) bool {
 	return endDate.After(startDate)
 }
 
-func getAllPublicReadingTarget(userID int) ([]int,[]dto.ReadingTarget, error) {
+func getAllPublicReadingTarget(userID int) ([]int, []dto.ReadingTarget, error) {
 	// Query readingTarget data from the database by ID
 	var isEligible bool
 	query := "SELECT * FROM reading_target WHERE is_public = $1"
