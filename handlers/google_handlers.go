@@ -33,7 +33,7 @@ func InitGoogle() {
 			ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 			ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
 			RedirectURL:  os.Getenv("GOOGLE_CALLBACK_URL"),
-			Scopes:       []string{"openid", "profile", "email", "https://www.googleapis.com/auth/calendar"},
+			Scopes:       []string{"profile", "email", "https://www.googleapis.com/auth/calendar"},
 			Endpoint:     google.Endpoint,
 		},
 		PostLoginURL: os.Getenv("POST_LOGIN_URL"),
