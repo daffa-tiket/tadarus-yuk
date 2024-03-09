@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -296,6 +297,9 @@ func getReadingProgressByUserIDTargetID(userID, targetID int) ([]dto.ReadingProg
 func getReadingProgressByTargetIDsAndTimeRange(targetIDs []int, startTime, endTime time.Time) ([]dto.ReadingProgress, error) {
     inClause := helpers.BuildInClause(targetIDs)
 
+	if len(inClause) == 0 {
+		return []dto.ReadingProgress{}, errors.New("empty list of target IDs")
+	}
 	query := fmt.Sprintf(`
         SELECT * FROM reading_progress
         WHERE target_id IN (%s)
