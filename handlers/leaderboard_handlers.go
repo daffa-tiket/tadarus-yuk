@@ -113,7 +113,7 @@ func getReadingTargetByUserIDForLeaderboard(userID int, readingTarget []dto.Read
 	for _, rt := range readingTarget {
 		var isEligible bool
 		progress, _ := getReadingProgressByUserIDTargetID(userID, rt.ID)
-		if len(progress) == 0 {
+		if len(progress) > 0 {
 			isEligible = true
 		}
 		if rt.UserID == userID && isEligible{
